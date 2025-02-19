@@ -99,39 +99,39 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'">
-    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -144,7 +144,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
@@ -161,7 +161,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'">
@@ -178,7 +178,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -232,7 +232,7 @@
   <ItemGroup>
     <ClCompile Include="Lost\DeltaTime.cpp" />
     <ClCompile Include="Lost\GL\Camera.cpp" />
-    <ClCompile Include="glad\src\glad.c" />
+    <ClCompile Include="Lost\GL\External\glad\src\glad.c" />
     <ClCompile Include="Lost\imgui\imgui.cpp" />
     <ClCompile Include="Lost\imgui\imgui_demo.cpp" />
     <ClCompile Include="Lost\imgui\imgui_draw.cpp" />
