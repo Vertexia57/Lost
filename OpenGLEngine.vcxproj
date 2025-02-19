@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugOptimise|Win32">
+      <Configuration>DebugOptimise</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugOptimise|x64">
+      <Configuration>DebugOptimise</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseOptimise|Win32">
+      <Configuration>ReleaseOptimise</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseOptimise|x64">
+      <Configuration>ReleaseOptimise</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{b33a5e1a-551c-4229-b781-d3520618a652}</ProjectGuid>
+    <RootNamespace>OpenGLEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'">
+    <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;E:\Coding\OpenGLEngine\Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Lost\DeltaTime.cpp" />
+    <ClCompile Include="Lost\GL\Camera.cpp" />
+    <ClCompile Include="glad\src\glad.c" />
+    <ClCompile Include="Lost\imgui\imgui.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Lost\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Lost\Input\Input.cpp" />
+    <ClCompile Include="Lost\lostImGui.cpp" />
+    <ClCompile Include="Lost\GL\RenderPass.cpp" />
+    <ClCompile Include="Lost\GL\ResourceManagers\GLResourceManagers.cpp" />
+    <ClCompile Include="Lost\GL\Texture\Material.cpp" />
+    <ClCompile Include="Lost\GL\Text\Text.cpp" />
+    <ClCompile Include="Lost\Log.cpp" />
+    <ClCompile Include="Lost\lost.cpp" />
+    <ClCompile Include="Lost\GL\LostGL.cpp" />
+    <ClCompile Include="Lost\State.cpp" />
+    <ClCompile Include="OpenGLEngine.cpp" />
+    <ClCompile Include="Lost\GL\Shaders\Shader.cpp" />
+    <ClCompile Include="Lost\GL\Texture\Texture.cpp" />
+    <ClCompile Include="Lost\GL\Renderer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Lost\DeltaTime.h" />
+    <ClInclude Include="Lost\GL\Camera.h" />
+    <ClInclude Include="Lost\FileIO.h" />
+    <ClInclude Include="Lost\imgui\imconfig.h" />
+    <ClInclude Include="Lost\imgui\imgui.h" />
+    <ClInclude Include="Lost\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="Lost\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="Lost\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="Lost\imgui\imgui_internal.h" />
+    <ClInclude Include="Lost\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Lost\imgui\imstb_textedit.h" />
+    <ClInclude Include="Lost\imgui\imstb_truetype.h" />
+    <ClInclude Include="Lost\Input\Input.h" />
+    <ClInclude Include="Lost\lostImGui.h" />
+    <ClInclude Include="Lost\GL\Mesh\StaticMesh.h" />
+    <ClInclude Include="Lost\GL\RenderPass.h" />
+    <ClInclude Include="Lost\GL\ResourceManagers\GLResourceManagers.h" />
+    <ClInclude Include="Lost\GL\Shaders\ShaderCode.h" />
+    <ClInclude Include="Lost\GL\STB\STBImplementation.h" />
+    <ClInclude Include="Lost\GL\STB\stb_image.h" />
+    <ClInclude Include="Lost\GL\Structs.h" />
+    <ClInclude Include="Lost\GL\Texture\Material.h" />
+    <ClInclude Include="Lost\GL\Text\Text.h" />
+    <ClInclude Include="Lost\GL\Vector.h" />
+    <ClInclude Include="Lost\GL\WindowContext.h" />
+    <ClInclude Include="Lost\Log.h" />
+    <ClInclude Include="Lost\lost.h" />
+    <ClInclude Include="Lost\GL\Shaders\Shader.h" />
+    <ClInclude Include="Lost\GL\LostGL.h" />
+    <ClInclude Include="Lost\GL\Mesh\Mesh.h" />
+    <ClInclude Include="Lost\GL\Texture\Texture.h" />
+    <ClInclude Include="Lost\GL\Renderer.h" />
+    <ClInclude Include="Lost\State.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Lost\GL\External\freetype.dll" />
+    <None Include="Lost\GL\External\freetyped.dll" />
+    <None Include="Lost\ResourceManager.h" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\glm.1.0.1\build\native\glm.targets" Condition="Exists('packages\glm.1.0.1\build\native\glm.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\glm.1.0.1\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glm.1.0.1\build\native\glm.targets'))" />
+  </Target>
+</Project>
