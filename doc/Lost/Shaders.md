@@ -115,7 +115,7 @@ lost::makeMaterial({ tex, texNormalMap }, "mat", shaderLight)
 
 
 
-`TODO: Consider adding custom indexed attributes, this really fucks with vertex buffers though and might need a refactor, but it does optimise having multiple materials with the same shader and different values, sadly textures cannot be attributes though and so this optimisation only works on a lot of things with the same texture`
+`TODO: Consider adding custom indexed attributes, this really messes with vertex buffers though and might need a refactor, but it does optimise having multiple materials with the same shader and different values, sadly textures cannot be attributes though and so this optimisation only works on a lot of things with the same texture`
 
 For help on coding shaders if you've never worked with them before, I highly recommend [The Book of Shaders](https://thebookofshaders.com/) 
 
