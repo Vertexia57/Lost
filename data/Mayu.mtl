@@ -1,0 +1,23 @@
+# Blender 4.0.2 MTL File: 'None'
+# www.blender.org
+
+newmtl Body.005
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.100000 0.100000 0.100000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:/Avatars/Mmmreeeooowww/Assets/Avatar Data/Siamese/Textures/Body_Base_color_1001.png
+map_Bump -bm 1.000000 D:/Avatars/Mmmreeeooowww/Assets/Avatar Data/Siamese/Textures/Body_Normal_1001.png
+
+newmtl Head.004
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.100000 0.100000 0.100000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:/Avatars/Mmmreeeooowww/Assets/Avatar Data/Siamese/Textures/Body_Base_color_1002.png
