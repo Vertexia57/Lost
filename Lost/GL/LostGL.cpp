@@ -86,6 +86,8 @@ namespace lost
 	// Terminate GLFW and remove all window contexts from heap
 	void _exitGL()
 	{
+		_destroyTextRendering();
+
 		_destroyRMs();
 		_destroyRenderer();
 
@@ -533,6 +535,7 @@ namespace lost
 				glfwMakeContextCurrent(context->glfwWindow);
 			}
 #else
+			context = _windowContexts[0];
 			glfwMakeContextCurrent(context->glfwWindow);
 #endif
 		}
