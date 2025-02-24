@@ -42,14 +42,17 @@ int main()
 		lost::beginFrame();
 		lost::fillWindow({ 0, 0, 0, 255 });
 
+		if (lost::getKeyTapped(LOST_KEY_LEFT_CONTROL))
+		{
+			cameraActive = !cameraActive;
+			lost::setMousePosition(lost::getWidth() / 2.0f, lost::getHeight() / 2.0f);
+		}
+
 		float mouseOffsetX = lost::getMouseX() - lost::getWidth() / 2.0f;
 		float mouseOffsetY = lost::getMouseY() - lost::getHeight() / 2.0f;
 
 		mouseOffsetX = (abs(mouseOffsetX) > 1.0f) ? mouseOffsetX : 0.0f;
 		mouseOffsetY = (abs(mouseOffsetY) > 1.0f) ? mouseOffsetY : 0.0f;
-
-		if (lost::getKeyTapped(LOST_KEY_LEFT_CONTROL))
-			cameraActive = !cameraActive;
 
 		if (cameraActive)
 		{
@@ -83,9 +86,16 @@ int main()
 		lost::setCameraPosition(cameraPosition);
 		lost::cameraLookAtRelative(forwardVector);
 
-		lost::renderMesh(mayu, { headMat, bodyMat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+		//lost::renderMesh(mayu, { headMat, bodyMat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 
-		lost::renderQuad3D(headMat, { 5.0f, -5.0f, 0.0f }, { 10.0f, 10.0f }, { 0.0f, 180.0f, 0.0f });
+		//lost::renderQuad3D(headMat, { 5.0f, -5.0f, 0.0f }, { 10.0f, 10.0f }, { 0.0f, 180.0f, 0.0f });
+
+		lost::beginMesh(LOST_MESH_LINE_STRIP, false);
+		lost::addVertex({ 1.0f, 0.0f, 0.0f });
+		lost::addVertex({ 0.0f, 0.0f, 0.0f });
+		lost::addVertex({ 1.0f, 1.0f, 0.0f });
+		lost::addVertex({ 0.0f, 1.0f, 0.0f });
+		lost::endMesh(headMat);
 
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();

@@ -28,7 +28,7 @@
               "type": "markdown",
               "state": {
                 "file": "Lost Cheat Sheet.md",
-                "mode": "preview",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
@@ -194,13 +194,13 @@
   },
   "active": "142f17229d4eeaa0",
   "lastOpenFiles": [
-    "Data Handling within Lost.md",
+    "Images/Default shader breakdown.png",
+    "Images/ShaderLoadInfo.png",
+    "Images/InitDebugInfo.png",
     "Lost Cheat Sheet.md",
     "Shaders.md",
     "Rendering.md",
-    "Images/ShaderLoadInfo.png",
-    "Images/InitDebugInfo.png",
-    "Images/Default shader breakdown.png",
+    "Data Handling within Lost.md",
     "Images",
     "().md",
     "Images/InitDebugText.png",

@@ -405,6 +405,7 @@ namespace lost
 			renderData.modelTransform = modelTransform;
 			renderData.depthMode = (depthTestFuncOverride == LOST_DEPTH_TEST_AUTO ? materials[i]->getDepthTestFunc() : depthTestFuncOverride);
 			renderData.depthWrite = depthWrite ? materials[i]->getDepthWrite() : false;
+			renderData.renderMode = ((CompiledMeshData*)mesh)->meshRenderMode;
 
 			m_MainRenderData.push_back(renderData);
 		}
@@ -418,7 +419,8 @@ namespace lost
 		CompiledMeshData* newMesh = new CompiledMeshData{
 			meshData.vectorData,
 			meshData.materialSlotIndicies,
-			meshData.indexData
+			meshData.indexData,
+			meshData.meshRenderMode
 		};
 		m_RawMeshes.push_back(newMesh);
 
@@ -474,7 +476,7 @@ namespace lost
 					glBindBuffer(GL_ARRAY_BUFFER, EBO);
 					glBufferData(GL_ELEMENT_ARRAY_BUFFER, currentIndexCount * sizeof(int), ((CompiledMeshData*)currentMesh)->indexData.data() + currentIndexOffset, GL_STATIC_DRAW);
 
-					glDrawElementsInstanced(GL_TRIANGLES, currentIndexCount, GL_UNSIGNED_INT, 0, transforms.size() / 2);
+					glDrawElementsInstanced(((CompiledMeshData*)currentMesh)->meshRenderMode, currentIndexCount, GL_UNSIGNED_INT, 0, transforms.size() / 2);
 
 					// Recreate transform list, reserving the maximum size that could occur
 					transforms.clear();
@@ -539,7 +541,7 @@ namespace lost
 			glBindBuffer(GL_ARRAY_BUFFER, EBO);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_MainRenderData[m_MainRenderData.size() - 1].indicies * sizeof(int), ((CompiledMeshData*)m_MainRenderData[m_MainRenderData.size() - 1].mesh)->indexData.data() + m_MainRenderData[m_MainRenderData.size() - 1].startIndex, GL_STATIC_DRAW);
 			
-			glDrawElementsInstanced(GL_TRIANGLES, m_MainRenderData[m_MainRenderData.size() - 1].indicies, GL_UNSIGNED_INT, 0, transforms.size());
+			glDrawElementsInstanced(((CompiledMeshData*)m_MainRenderData[m_MainRenderData.size() - 1].mesh)->meshRenderMode, m_MainRenderData[m_MainRenderData.size() - 1].indicies, GL_UNSIGNED_INT, 0, transforms.size());
 
 			glDepthMask(true);
 			glDepthFunc(LOST_DEPTH_TEST_LESS);
@@ -744,6 +746,7 @@ namespace lost
 	{
 		Window currentWindow = getCurrentWindow();
 
+		// [!] TODO: Make this a function? since it scales it might not need to be
 		glm::mat4x4 transform = glm::mat4x4(
 			  2.0f / getWidth(currentWindow) * bounds.w,         0.0f,                                              0.0f,    0.0f,
 			  0.0f,                                             -2.0f / getHeight(currentWindow) * bounds.h,        0.0f,    0.0f,
@@ -868,5 +871,136 @@ namespace lost
 	void setPostProcessingShader(PPShader shader)
 	{
 		_renderer->setPostProcessingShader(shader);
+	}
+
+	void beginMesh(unsigned int meshMode, bool screenspace)
+	{
+		// Clear the old data that was used in the last mesh
+		_renderer->_TempMeshBuild = {};
+		_renderer->_TempMeshBuild.meshRenderMode = meshMode;
+		_renderer->_TempMeshBuild.materialSlotIndicies = { 0 };
+		_renderer->_TempMeshUsesWorldTransform = !screenspace;
+		_renderer->_TempMeshModelTransform = glm::identity<glm::mat4x4>();
+
+		// Check if was already building mesh
+		if (_renderer->_BuildingMesh)
+		{
+			debugLog("Tried to run \"beginMesh()\" while already creating a mesh.", LOST_LOG_WARNING);
+			return;
+		}
+
+		// Begin building the mesh
+		_renderer->_BuildingMesh = true;
+	}
+
+	void endMesh(std::vector<Material>& materials)
+	{
+		glm::mat4x4 mpvTransform;
+		// Get the MPV of the model
+		if (_renderer->_TempMeshUsesWorldTransform)
+			mpvTransform = _getCurrentCamera()->getPV() * _renderer->_TempMeshModelTransform;
+		else
+		{
+			Window currentWindow = getCurrentWindow();
+
+			// [!] TODO: Make this a function
+			mpvTransform = glm::mat4x4(
+				 2.0f / getWidth(currentWindow), 0.0f,							  0.0f,		0.0f,
+				 0.0f,							-2.0f / getHeight(currentWindow), 0.0f,		0.0f,
+				 0.0f,							 0.0f,							  0.0001f,	0.0f,
+				-1.0f,							 1.0f,							  0.2f,		1.0f
+			) * _renderer->_TempMeshModelTransform;
+		}
+
+		// Add the mesh data to the render queue
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform);
+		_renderer->_BuildingMesh = false;
+	}
+
+	void endMesh(Material material)
+	{
+		// Create a material list which contains the material given
+		std::vector<Material> materials = { material };
+
+		glm::mat4x4 mpvTransform;
+		// Get the MPV of the model
+		if (_renderer->_TempMeshUsesWorldTransform)
+			mpvTransform = _getCurrentCamera()->getPV() * _renderer->_TempMeshModelTransform;
+		else
+		{
+			Window currentWindow = getCurrentWindow();
+
+			// Screenspace transform
+			// [!] TODO: Make this a function
+			mpvTransform = glm::mat4x4(
+				 2.0f / getWidth(currentWindow), 0.0f,							  0.0f,		0.0f,
+				 0.0f,							-2.0f / getHeight(currentWindow), 0.0f,		0.0f,
+				 0.0f,							 0.0f,							  0.0001f,	0.0f,
+				-1.0f,							 1.0f,							  0.2f,		1.0f
+			) * _renderer->_TempMeshModelTransform;
+		}
+
+		// Add the mesh data to the render queue
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform);
+		_renderer->_BuildingMesh = false;
+	}
+
+	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord, Vec3 vertexNormal)
+	{
+		// Create a vector of the vertex data
+		// [!] TODO: Convert this into a function just incase we change the format
+		std::vector<float> vertexData = {
+			position.x, position.y, position.z,
+			textureCoord.x, textureCoord.y,
+			vertexColor.r, vertexColor.g, vertexColor.b, vertexColor.a,
+			vertexNormal.x, vertexNormal.y, vertexNormal.z
+		};
+		// Append the data to the end of the list
+		_renderer->_TempMeshBuild.vectorData.insert(_renderer->_TempMeshBuild.vectorData.end(), vertexData.begin(), vertexData.end());
+		_renderer->_TempMeshBuild.indexData.push_back(_renderer->_TempMeshBuild.indexData.size());
+	}
+
+	void addVertex(Vertex& vertex)
+	{
+		// Create a vector of the vertex data
+		// [!] TODO: Convert this into a function just incase we change the format
+		std::vector<float> vertexData = {
+			vertex.position.x, vertex.position.y, vertex.position.z,
+			vertex.textureCoord.x, vertex.textureCoord.y,
+			vertex.vertexColor.x, vertex.vertexColor.y, vertex.vertexColor.z, vertex.vertexColor.w,
+			vertex.vertexNormal.x, vertex.vertexNormal.y, vertex.vertexNormal.z
+		};
+
+		// Append the data to the end of the list
+		_renderer->_TempMeshBuild.vectorData.insert(_renderer->_TempMeshBuild.vectorData.end(), vertexData.begin(), vertexData.end());
+		_renderer->_TempMeshBuild.indexData.push_back(_renderer->_TempMeshBuild.indexData.size());
+	}
+
+	void setMeshTransform(glm::mat4x4& transform)
+	{
+		// Set the world transform of the mesh
+		_renderer->_TempMeshUsesWorldTransform = true;
+		_renderer->_TempMeshModelTransform = transform;
+	}
+
+	void setMeshTransform(Vec3 position, Vec3 scale, Vec3 rotation, bool screenspace)
+	{
+		// Create a transform
+		_renderer->_TempMeshUsesWorldTransform = !screenspace;
+
+		glm::mat4x4 transform = glm::mat4x4(
+			scale.x, 0.0f,    0.0f,    0.0f,
+			0.0f,    scale.y, 0.0f,    0.0f,
+			0.0f,    0.0f,    scale.z, 0.0f,
+			0.0f,    0.0f,    0.0f,    1.0f
+		);
+		transform = glm::eulerAngleXYZ(glm::radians(rotation.x), glm::radians(rotation.y), glm::radians(rotation.z)) * transform;
+		transform[3][0] += position.x;
+		transform[3][1] += position.y;
+		transform[3][2] += position.z;
+
+		// Set the world transform of the mesh
+		_renderer->_TempMeshModelTransform = transform;
+
 	}
 }

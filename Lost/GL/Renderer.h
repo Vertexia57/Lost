@@ -119,6 +119,24 @@ namespace lost
 	// Temporary
 	void setPostProcessingShader(PPShader shader);
 
+	// Starts the creation of a mesh which will be rendered once endMesh() is ran
+	void beginMesh(unsigned int meshMode = LOST_MESH_TRIANGLES, bool screenspace = false);
+	// Finishes the creation of a mesh and renders it, using the materials provided
+	void endMesh(std::vector<Material>& materials);
+	// Finishes the creation of a mesh and renders it, using the material provided
+	void endMesh(Material material);
+
+	// Adds a vertex to the mesh being created, must be ran after beginMesh()
+	void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
+	// Adds a vertex to the mesh being created, must be ran after beginMesh()
+	void addVertex(Vertex& vertex);
+
+	// Sets the world transform of the mesh being rendered, must be ran after beginMesh()
+	void setMeshTransform(glm::mat4x4& transform);
+	// Sets the world transform of the mesh being rendered, must be ran after beginMesh()
+	// "screenspace" when true will use a screenspace projection
+	void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
+
 	class Renderer
 	{
 	public:
@@ -173,6 +191,14 @@ namespace lost
 #endif
 
 		void fillWindow(Color color);
+
+		// Mesh Building
+
+		// The mesh used when running beingMesh and endMesh;
+		CompiledMeshData _TempMeshBuild = {};
+		bool _BuildingMesh = false;
+		bool _TempMeshUsesWorldTransform = false;
+		glm::mat4x4 _TempMeshModelTransform;
 	protected:
 #ifndef IMGUI_DISABLE
 		bool m_UsingImGui = false;
@@ -191,6 +217,7 @@ namespace lost
 		unsigned int EBO; // Element Buffer Object
 
 		PPShader m_CurrentPPShader;
+
 	};
 
 	class Renderer2D : public Renderer
@@ -237,6 +264,7 @@ namespace lost
 			glm::mat4x4 modelTransform;
 
 			unsigned int depthMode = LOST_DEPTH_TEST_LESS;
+			unsigned int renderMode = LOST_MESH_TRIANGLES;
 			bool depthWrite = true;
 
 			bool depthComp(MeshRenderData& other) const

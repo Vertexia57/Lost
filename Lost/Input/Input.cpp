@@ -181,6 +181,8 @@ namespace lost
 		if (window == nullptr)
 			window = getWindow(0);
 		glfwSetCursorPos(window->glfwWindow, x, y);
+		inputManager.mousePosition.x = x;
+		inputManager.mousePosition.y = y;
 	}
 
 	bool getMouseDown(int mouseButton)

@@ -54,12 +54,13 @@ namespace lost
 		std::vector<float> vectorData;
 		std::vector<unsigned int> materialSlotIndicies;
 		std::vector<unsigned int> indexData;
+		unsigned int meshRenderMode = LOST_MESH_TRIANGLES;
 	};
 
 	union Vertex {
 		struct
 		{
-			Vec3 postion;
+			Vec3 position;
 			Vec2 textureCoord;
 			Vec4 vertexColor;
 			Vec3 vertexNormal;

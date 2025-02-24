@@ -447,7 +447,7 @@ namespace lost
 					{
 						Vertex vert = {};
 
-						vert.postion = vertexData[std::stoi(subTokens[0]) - 1].xyz;
+						vert.position = vertexData[std::stoi(subTokens[0]) - 1].xyz;
 						vert.textureCoord = { textureData[std::stoi(subTokens[1]) - 1].x, 1.0f - textureData[std::stoi(subTokens[1]) - 1].y };
 						vert.vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 						vert.vertexNormal = normalData[std::stoi(subTokens[2]) - 1];
