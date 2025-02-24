@@ -40,6 +40,7 @@ namespace lost
 	typedef _Font* Font;
 
 	void _initTextRendering();
+	void _destroyTextRendering();
 
 	Font _loadFontNoManager(const char* filePath, float fontSize);
 

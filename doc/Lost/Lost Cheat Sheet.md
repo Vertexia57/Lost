@@ -105,16 +105,6 @@ void addOutputBuffer(const char* bufferName, unsigned int format = LOST_FORMAT_R
 More detailed descriptions for these functions can be found [[here]].
 
 ```cpp
-// Renders the mesh given to the screen
-void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform);
-void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
-
-void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }); 
-//    ^ Renders a quad in 3D space, taking in a 3D position, size and rotation
-
-void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
-//    ^ Renders a quad to the screen not caring for perspective or view
-
 void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
 //    ^ Renders the texture to the screen using the default shader
 //      "bounds" is the area of the screen it renders to and "texBounds" is the area on the texture it will use in pixels.
@@ -122,6 +112,17 @@ void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f
 
 void renderTexture(Texture texture, float x, float y, float w = -1, float h = -1);
 //    ^ Renders the texture to the screen in the area given, the -1 just shows that it uses the texture's width as the width instead of a set width
+
+// Renders the mesh given to the screen
+void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform);
+void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
+
+void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }); 
+//    ^ Renders a quad in 3D space, taking in a 3D position, size and rotation, texBounds is the UV bounds from 0.0f - 1.0f
+
+void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
+//    ^ Renders a quad to the screen not caring for perspective or view, texBounds is the UV bounds from 0.0f - 1.0f
+
 ```
 
 ---

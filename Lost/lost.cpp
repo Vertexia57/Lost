@@ -6,6 +6,7 @@ namespace lost
 	void init(unsigned int rendererMode)
 	{
 		debugLog("Lost is currently in DEBUG mode, define LOST_RELEASE_MODE globally in project settings or compiler settings to remove extra debug features", LOST_LOG_INFO);
+		
 		lost::_initGL(rendererMode);
 
 #ifdef LOST_DEBUG_MODE

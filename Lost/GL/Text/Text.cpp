@@ -27,6 +27,11 @@ namespace lost
 		_textShader->buildShader(_baseVSCode, _baseTextFSCode);
 	}
 
+	void _destroyTextRendering()
+	{
+		delete _textShader;
+	}
+
     Font lost::_loadFontNoManager(const char* filePath, float fontSize)
     {
 		Font newFont = new _Font();

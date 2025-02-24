@@ -7,12 +7,13 @@ int main()
 {
 	lost::addOutputBuffer("normal", {0.5, 0.5, 1.0f, 1.0f});
 	lost::init(LOST_RENDER_3D);
+
 	lost::createWindow(500, 500);
 	lost::useVSync(true);
 
 	lost::setupImGui();
 
-	lost::Shader shader = lost::loadShader("data/vertex.vert", "data/fragment.frag", "phoneLighting");
+	lost::Shader shader = lost::loadShader("data/vertex.vert", "data/fragment.frag", "phongLighting");
 
 	lost::Font font = lost::loadFont("data/PixeloidSans.ttf", 64.0f, "pixelFont");
 	lost::Texture tex = lost::loadTexture("data/emy.png");
@@ -50,7 +51,7 @@ int main()
 		if (lost::getKeyTapped(LOST_KEY_LEFT_CONTROL))
 			cameraActive = !cameraActive;
 
-		if(cameraActive)
+		if (cameraActive)
 		{
 			lost::setMousePosition(lost::getWidth() / 2.0f, lost::getHeight() / 2.0f);
 			camYaw += mouseOffsetX / 300.0f;
