@@ -123,6 +123,9 @@ void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f
 void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
 //    ^ Renders a quad to the screen not caring for perspective or view, texBounds is the UV bounds from 0.0f - 1.0f
 
+void setCullMode(unsigned int cullMode)
+//    ^ Sets the cull mode of the renderer, using LOST_CULL_FRONT, LOST_CULL_BACK, LOST_CULL_NONE, LOST_CULL_FRONT_AND_BACK and LOST_CULL_AUTO
+//      LOST_CULL_AUTO is the default, when this mode is set it uses the cull mode of the material being used (Which by default is LOST_CULL_BACK)
 ```
 
 ---
@@ -239,6 +242,27 @@ void unloadMesh(const char* id);
 void unloadMesh(Mesh& obj);
 void forceUnloadMesh(const char* id);
 void forceUnloadMesh(Mesh& obj);
+
+// [-------------------------]
+//   Immediate Mesh Creation
+// [-------------------------]
+
+void beginMesh(unsigned int renderMode = LOST_MESH_TRIANGLES, bool screenspace = false);
+//    ^ Starts the creation of a mesh which will be rendered once endMesh() is ran
+
+void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f }); 
+void addVertex(Vertex vertex); 
+//    ^ Adds a vertex to the mesh being created, must be ran after beginMesh()
+
+void endMesh(Material material);
+void endMesh(std::vector<Material>& materials);
+//    ^ Finishes the creation of a mesh and renders it, using the materials provided
+
+void setMeshTransform(glm::mat4x4& transform); // Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
+void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
+//    ^ Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
+//      "screenspace" when true will use a screenspace projection
+
 ```
 
 ---
@@ -331,8 +355,8 @@ void log(const char* text, unsigned int level); // Logs the text, even in releas
 void setLogContext(std::string context); // Add context for the log function, helps with error messages, can be cleared with clearLogContext()
 void clearLogContext(); // Clears the log context, does nothing unless setLogContext() has been ran
 
-void startProcessTimeLog();
-void endProcessTimeLog(const char* title);
+void startProcessTimeLog(); // Starts a timer
+void endProcessTimeLog(const char* title); // Outputs that timer in nanoseconds to the console
 ```
 ---
 # Keyboard Input

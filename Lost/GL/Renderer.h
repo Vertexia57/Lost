@@ -127,15 +127,18 @@ namespace lost
 	void endMesh(Material material);
 
 	// Adds a vertex to the mesh being created, must be ran after beginMesh()
-	void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
+	void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
 	// Adds a vertex to the mesh being created, must be ran after beginMesh()
 	void addVertex(Vertex& vertex);
 
-	// Sets the world transform of the mesh being rendered, must be ran after beginMesh()
+	// Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
 	void setMeshTransform(glm::mat4x4& transform);
-	// Sets the world transform of the mesh being rendered, must be ran after beginMesh()
+	// Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
 	// "screenspace" when true will use a screenspace projection
 	void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
+
+	// Sets the current backface culling override, LOST_CULL_AUTO is default, which doesn't override material cull settings
+	void setCullMode(unsigned int cullMode);
 
 	class Renderer
 	{
@@ -145,6 +148,9 @@ namespace lost
 
 		// Sets the render mode 
 		void setRenderMode(unsigned int renderMode);
+
+		// Sets the cull mode
+		void setCullMode(unsigned int cullMode);
 
 		// Generates the buffer objects used by the renderer, gets ran after the invisible context is created
 		void generateBufferObjects();
@@ -205,6 +211,8 @@ namespace lost
 #endif
 
 		unsigned int m_RenderMode = LOST_RENDER_MODE_AUTO_QUEUE;
+		unsigned int m_CullMode = LOST_CULL_AUTO;
+		bool m_CullingEnabled = true; // Checks if culling is enabled, this is to reduce calls
 
 		std::vector<CompiledMeshData*> m_RawMeshes;
 
@@ -263,6 +271,8 @@ namespace lost
 			glm::mat4x4 mvpTransform;
 			glm::mat4x4 modelTransform;
 
+			unsigned int cullMode = LOST_CULL_AUTO;
+			unsigned int ZSortMode = LOST_ZSORT_NORMAL;
 			unsigned int depthMode = LOST_DEPTH_TEST_LESS;
 			unsigned int renderMode = LOST_MESH_TRIANGLES;
 			bool depthWrite = true;
@@ -275,17 +285,17 @@ namespace lost
 
 		static bool meshSortFunc(const MeshRenderData& lhs, const MeshRenderData& rhs)
 		{
-			if (lhs.material->getDepthTestFunc() == LOST_DEPTH_TEST_ALWAYS || rhs.material->getDepthTestFunc() == LOST_DEPTH_TEST_ALWAYS)
+			if (lhs.depthMode == LOST_DEPTH_TEST_ALWAYS || rhs.depthMode == LOST_DEPTH_TEST_ALWAYS)
 			{
 				// No batching when using LOST_DEPTH_TEST_ALWAYS
 				// This is to preserve order when rendering
-				if (lhs.material->getDepthTestFunc() == LOST_DEPTH_TEST_ALWAYS)
-					return false;
-				return true;
+				return false;
+
+				//if (lhs.depthMode != LOST_DEPTH_TEST_ALWAYS && rhs.depthMode == LOST_DEPTH_TEST_ALWAYS)
+				//	return true;
 			}
 
 			// Normal, has batching
-
 			if (lhs.material->getQueueLevel() != rhs.material->getQueueLevel())
 				return lhs.material->getQueueLevel() < rhs.material->getQueueLevel();
 			if (lhs.material->getShader() != rhs.material->getShader())
@@ -296,6 +306,10 @@ namespace lost
 				return lhs.mesh < rhs.mesh;
 			if (lhs.startIndex != rhs.startIndex)
 				return lhs.startIndex < rhs.startIndex;
+
+			// Ordered from most commonly to least commonly used
+			if (lhs.cullMode != rhs.cullMode)
+				return lhs.cullMode < rhs.cullMode;
 			if (lhs.depthMode != rhs.depthMode)
 				return lhs.depthMode < rhs.depthMode;
 			if (lhs.depthWrite != rhs.depthWrite)

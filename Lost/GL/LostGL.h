@@ -29,6 +29,7 @@ namespace lost
 	Window createWindow(int width, int height, const char* title = "Application");
 	Window getWindow(unsigned int id = 0);
 	Window getCurrentWindow();
+	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _setWindow(unsigned int id);
 	unsigned int getCurrentWindowID();
 	const std::vector<Window>& getWindows();

@@ -61,6 +61,11 @@ namespace lost
 		}
 	}
 
+	void Renderer::setCullMode(unsigned int cullMode)
+	{
+		m_CullMode = cullMode;
+	}
+
 	void Renderer::generateBufferObjects()
 	{
 		glGenVertexArrays(1, &m_EmptyVAO);
@@ -404,8 +409,11 @@ namespace lost
 			renderData.mvpTransform = mvpTransform;
 			renderData.modelTransform = modelTransform;
 			renderData.depthMode = (depthTestFuncOverride == LOST_DEPTH_TEST_AUTO ? materials[i]->getDepthTestFunc() : depthTestFuncOverride);
-			renderData.depthWrite = depthWrite ? materials[i]->getDepthWrite() : false;
+			renderData.depthWrite = depthWrite && materials[i]->getDepthWrite();
+			renderData.cullMode = (m_CullMode == LOST_CULL_AUTO ? materials[i]->getFaceCullMode() : m_CullMode);
 			renderData.renderMode = ((CompiledMeshData*)mesh)->meshRenderMode;
+
+			debugLogIf(renderData.cullMode == LOST_CULL_AUTO, "Material had cull mode LOST_CULL_AUTO. Which shouldn't be used by materials, and only the renderer", LOST_LOG_WARNING);
 
 			m_MainRenderData.push_back(renderData);
 		}
@@ -440,6 +448,7 @@ namespace lost
 			unsigned int currentIndexCount    = m_MainRenderData[0].indicies;
 			unsigned int currentDepthTestFunc = m_MainRenderData[0].depthMode;
 			bool         currentDepthWrite    = m_MainRenderData[0].depthWrite;
+			unsigned int currentCullMode      = m_MainRenderData[0].cullMode;
 			
 			// Setup first meshes material and vertex data
 			currentMaterial->bindShader();
@@ -448,6 +457,21 @@ namespace lost
 			// Set the depth test function to the first one
 			glDepthMask(currentDepthWrite);
 			glDepthFunc(currentDepthTestFunc);
+
+			// Set the cull mode of the renderer
+			if (currentCullMode != LOST_CULL_NONE) 
+			{
+				// Set the current current cull mode
+				glCullFace(currentCullMode);
+				m_CullingEnabled = true;
+
+				// Culling is automatically enabled at the end of every frame, we don't need to enable it
+			}
+			else
+			{
+				glDisable(GL_CULL_FACE);
+				m_CullingEnabled = false;
+			} 
 
 			// Vertex Array Object
 			glBindVertexArray(VAOs[getCurrentWindowID()]);
@@ -465,7 +489,7 @@ namespace lost
 			{
 				MeshRenderData& renderData = m_MainRenderData[i];
 
-				if (renderData.mesh != currentMesh || renderData.material != currentMaterial || currentIndexOffset != renderData.startIndex || currentDepthTestFunc != renderData.depthMode || currentDepthWrite != renderData.depthWrite)
+				if (renderData.mesh != currentMesh || renderData.material != currentMaterial || currentIndexOffset != renderData.startIndex || currentDepthTestFunc != renderData.depthMode || currentDepthWrite != renderData.depthWrite || currentCullMode != renderData.cullMode)
 				{
 					// Render all matching meshes with instancing
 
@@ -482,19 +506,48 @@ namespace lost
 					transforms.clear();
 					transforms.reserve(2 * (m_MainRenderData.size() - i));
 
+					// Set the index offset for the new mesh
 					currentIndexOffset = renderData.startIndex;
 					currentIndexCount = renderData.indicies;
 
+					// Set the new depth mode settings
 					if (renderData.depthMode != currentDepthTestFunc)
 					{
 						currentDepthTestFunc = renderData.depthMode;
 						glDepthFunc(currentDepthTestFunc);
 					}
 
+					// Set the new depth write settings
 					if (renderData.depthWrite != currentDepthWrite)
 					{
 						currentDepthWrite = renderData.depthWrite;
 						glDepthMask(currentDepthWrite);
+					}
+
+					// Set the new cull mode
+					if (renderData.cullMode != currentCullMode)
+					{
+						// Update the culling value
+						currentCullMode = renderData.cullMode;
+
+						// Set the cull mode of the renderer
+						if (currentCullMode != LOST_CULL_NONE)
+						{
+							// Check if culling is already enabled
+							if (!m_CullingEnabled)
+							{
+								glEnable(GL_CULL_FACE);
+								m_CullingEnabled = true;
+							}
+
+							// Set the current current cull mode
+							glCullFace(currentCullMode);
+						}
+						else if (m_CullingEnabled) // Check if it is enabled
+						{
+							glDisable(GL_CULL_FACE);
+							m_CullingEnabled = false;
+						}
 					}
 
 					// Update mesh vertex data if necessary
@@ -913,7 +966,7 @@ namespace lost
 		}
 
 		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform);
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, false);
 		_renderer->_BuildingMesh = false;
 	}
 
@@ -941,7 +994,7 @@ namespace lost
 		}
 
 		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform);
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, false);
 		_renderer->_BuildingMesh = false;
 	}
 
@@ -1002,5 +1055,10 @@ namespace lost
 		// Set the world transform of the mesh
 		_renderer->_TempMeshModelTransform = transform;
 
+	}
+
+	void setCullMode(unsigned int cullMode)
+	{
+		_renderer->setCullMode(cullMode);
 	}
 }

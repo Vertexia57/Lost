@@ -174,6 +174,7 @@ namespace lost
 	void _mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 	// Runs glfwPollInputs() and updates taps
+	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _pollInputs();
 
 	// Returns if a specific key is down, updates once per frame

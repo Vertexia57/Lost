@@ -86,16 +86,6 @@ int main()
 		lost::setCameraPosition(cameraPosition);
 		lost::cameraLookAtRelative(forwardVector);
 
-		//lost::renderMesh(mayu, { headMat, bodyMat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
-
-		//lost::renderQuad3D(headMat, { 5.0f, -5.0f, 0.0f }, { 10.0f, 10.0f }, { 0.0f, 180.0f, 0.0f });
-
-		lost::beginMesh(LOST_MESH_LINE_STRIP, false);
-		lost::addVertex({ 1.0f, 0.0f, 0.0f });
-		lost::addVertex({ 0.0f, 0.0f, 0.0f });
-		lost::addVertex({ 1.0f, 1.0f, 0.0f });
-		lost::addVertex({ 0.0f, 1.0f, 0.0f });
-		lost::endMesh(headMat);
 
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();

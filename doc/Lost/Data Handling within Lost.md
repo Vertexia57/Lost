@@ -30,6 +30,11 @@ int main()
 		lost::endFrame();
 	}
 
+	// Lost handles data automatically, you DON'T need to unload data you load
+	// it will be unloaded automatically when the program closes
+	//
+	// Unloading is just there just incase you want to unload data in the middle of your program
+
 	// Each load requires a matching unload, even if it's for the same image
 	lost::unloadTexture(texA);
 	lost::unloadTexture(texB); // We don't have to use texB here as texA is the exact same reference
@@ -100,7 +105,10 @@ lost::getTexture("Image.png"); // Functions identically to how it would with a n
 # In Summary
 
 Lost stores all data with IDs, you can use these IDs to get data and use it across your program.
-Don't like this? Disable it with `lost::setStateData(LOST_STATE_USE_DATA_IDS, (void*)true/false).
+Don't like this? Disable it with `lost::setStateData(LOST_STATE_USE_DATA_IDS, (void*)true/false). 
+TODO: Remove this function and replace with more verbose code
+
+Lost unloads all data automatically, unloading is just there just incase you want to unload data in the middle of your program
 
 *`[data]` here can just be replaced with the data type you need, eg. `Shader`, `Texture`, `Image`*
 - You should use data IDs wherever possible, using `lost::get[data](id)` when you need to use that data.

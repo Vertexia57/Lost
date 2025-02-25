@@ -28,7 +28,9 @@ namespace lost
 	void    forceUnloadTexture(const char* id);
 	void    forceUnloadTexture(Texture texture);
 
-	// Takes the list of textures as the input into the shaders texture slots, if shader is not set, uses the default shader. This shader changes based on which renderer is being used, renderQueue is how it is ordered in rendering, lower is first, higher is last
+	// Takes the list of textures as the input into the shaders texture slots
+	// If shader is not set, uses the default shader. This shader changes based on which renderer is being used.
+	// RenderQueue is how it is ordered in rendering, lower is first, higher is last
 	Material makeMaterial(std::vector<Texture> textures, const char* id, Shader shader = nullptr, unsigned int renderQueue = LOST_SHADER_OPAQUE);
 	Material getMateral(const char* id);
 	void     destroyMaterial(const char* id);
