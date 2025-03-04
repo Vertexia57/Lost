@@ -2,6 +2,7 @@
 #include "../LostGL.h"
 #include <unordered_map>
 #include <iostream>
+#include <algorithm>
 //#include <hash_set>
 
 template <typename Out>
@@ -139,6 +140,12 @@ namespace lost
 	{
 		_textureRM->forceDestroyValueByValue(texture);
 	}
+
+	const char* _getTextureID(Texture texture)
+	{
+		return _textureRM->getIDByValue(texture);
+	}
+
 #pragma endregion
 
 #pragma region Material
@@ -161,6 +168,138 @@ namespace lost
 	Material getMateral(const char* id)
 	{
 		return _materialRM->getValue(id);
+	}
+
+	std::vector<Material> loadMaterialsFromOBJMTL(const char* objFileLoc)
+	{
+		// We need to load the OBJ file to preserve the order that the materials are in in the .obj
+		std::string objText = loadfile(objFileLoc);
+
+		size_t mtllibTermBegin = objText.find("mtllib ") + 7;
+		size_t mtllibTermEnd = objText.find('\n', mtllibTermBegin) - 1;
+		std::string mtlFileLoc = objText.substr(mtllibTermBegin, mtllibTermEnd - mtllibTermBegin + 1);
+		// ^ This returns the relative location from the .obj, which means we need to make it relative to the program
+		
+		// Sanitize directory
+		std::string objFileLocStr = objFileLoc;
+		std::replace(objFileLocStr.begin(), objFileLocStr.end(), '/', '\\');
+		// Get parent directory
+		std::string objFileParentDirectory = objFileLocStr.substr(0, objFileLocStr.rfind('\\') + 1);
+		mtlFileLoc = objFileParentDirectory + mtlFileLoc; // Set actual directory
+
+		// This is the order the .obj files defines the materials, this is how they will be output
+		std::vector<std::string> objOrder;
+		// This is the order the .mtl files defines the materials
+		std::vector<std::string> mtlOrder;
+
+		// Find the first
+		size_t usemtlLoc = objText.find("usemtl ");
+		while (usemtlLoc != std::string::npos)
+		{
+			// Get the second term after "usemtl " till "\n"
+			size_t usemtlEnd = objText.find('\n', usemtlLoc) - 1;
+			objOrder.push_back(objText.substr(usemtlLoc + 7, (usemtlEnd + 1) - (usemtlLoc + 7)));
+
+			// Find the next occurance returns std::string::npos if there isn't one
+			usemtlLoc = objText.find("usemtl ", usemtlLoc + 7);
+		}
+
+		// Clear it as .objs can be very big and we want to get it off the stack before we work with the .mtl
+		objText.clear(); 
+
+		debugLog("Loading .mtl file: " + mtlFileLoc, LOST_LOG_INFO);
+		
+		std::vector<Material> materialOutList = {};
+
+		std::string materialFile = loadfile(mtlFileLoc.c_str());
+
+		// Prepare for making a material
+		std::string materialName;
+		std::string diffuseImageLocation;
+
+		// Loop through the MTL file
+		std::vector<std::string> fileLines = split(materialFile, '\n');
+		for (std::string& line : fileLines)
+		{
+			std::vector<std::string> tokens = split(line, ' ');
+			if (tokens.size() == 0)
+				continue;
+
+			if (tokens.at(0) == "newmtl")
+			{
+				if (!materialName.empty())
+				{
+					std::vector<Texture> textureList;
+
+					// Check if a diffuse image was given
+					if (diffuseImageLocation.empty())
+					{
+						// [!] TODO: this doesn't support colors, or specular
+						textureList = { lost::_getDefaultWhiteTexture() };
+					}
+					else
+					{
+						// Load the textures
+						textureList = { lost::loadTexture(diffuseImageLocation.c_str()) };
+					}
+
+					materialOutList.push_back(lost::makeMaterial(textureList, materialName.c_str()));
+					mtlOrder.push_back(materialName);
+
+					diffuseImageLocation.clear();
+				}
+
+				materialName = tokens.at(1);
+			}
+
+			// Currently we can only support the map_Kd token for texturing
+			if (tokens.at(0) == "map_Kd")
+			{
+				// We need to manually get the second half as the tokenizer doesn't work with filenames with spaces
+				diffuseImageLocation = line.substr(7, line.size() - 7);
+			}
+		}
+
+		// The file end does not have a marker to end a material and so it's implied at the end of file to finish a material
+		if (!materialName.empty())
+		{
+			std::vector<Texture> textureList;
+
+			// Check if a diffuse image was given
+			if (diffuseImageLocation.empty())
+			{
+				// [!] TODO: this doesn't support colors, or specular
+				textureList = { lost::_getDefaultWhiteTexture() };
+			}
+			else
+			{
+				// Load the textures
+				textureList = { lost::loadTexture(diffuseImageLocation.c_str()) };
+			}
+
+			materialOutList.push_back(lost::makeMaterial(textureList, materialName.c_str()));
+			mtlOrder.push_back(materialName);
+		}
+
+		// The .mtl file loads in the wrong order
+		// We need to reorganise it to match the .obj file
+
+		std::vector<Material> orderedOutList = {};
+
+		// Loop through both the orders, note this in O(n^2) and is not efficient
+		for (int i = 0; i < objOrder.size(); i++)
+		{
+			for (int j = 0; j < mtlOrder.size(); j++)
+			{
+				if (objOrder[i] == mtlOrder[j]) // Check if it's a match
+				{
+					orderedOutList.push_back(materialOutList[j]);
+					break; // Break out of the .mtl loop as we found a match for this one
+				}
+			}
+		}
+
+		return orderedOutList;
 	}
 
 	void destroyMaterial(const char* id)
@@ -247,6 +386,11 @@ namespace lost
 #pragma endregion
 
 #pragma region Mesh
+
+	const char* _getShaderID(Shader shader)
+	{
+		return _shaderRM->getIDByValue(shader);
+	}
 
 	Mesh loadMesh(const char* objLoc, const char* id)
 	{
@@ -441,7 +585,6 @@ namespace lost
 				for (int i = 1; i < tokens.size(); i++)
 				{
 					std::vector<std::string> subTokens = split(tokens[i], '/');
-					//IndexData indexData = { std::stoi(subTokens[0]) - 1, std::stoi(subTokens[1]) - 1, std::stoi(subTokens[2]) - 1 };
 
 					if (vertexIndexMap.count(tokens[i]) == 0)
 					{
@@ -479,9 +622,8 @@ namespace lost
 			for (int i = 0; i < sizeof(vertex.data) / sizeof(float); i++)
 				data->vectorData.push_back(vertex.data[i]);
 		}
-		//newMeshData->vectorData.insert(newMeshData->vectorData.end(), meshData.verticies.begin(), meshData.verticies.end());
+
 		data->indexData.insert(data->indexData.end(), meshData.indexArray.begin(), meshData.indexArray.end());
-		//newMeshData->stride = sizeof(Vertex);
 
 		// Copy material take over inducies
 		data->materialSlotIndicies.insert(data->materialSlotIndicies.begin(), meshData.materialSlotIndicies.begin(), meshData.materialSlotIndicies.end());

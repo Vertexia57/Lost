@@ -808,8 +808,19 @@ namespace lost
 		);
 
 		std::vector<Material> materialList = { mat };
-		
-		_renderer->addMeshToQueue(lost::standardQuad, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+
+		const Color& color = getNormalizedColor();
+		CompiledMeshData mesh = {};
+		mesh.vectorData = {
+			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f
+		};
+		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
+		mesh.materialSlotIndicies = { 0 };
+
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
 	}
 
 	void renderRect3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation)
@@ -827,9 +838,23 @@ namespace lost
 
 		glm::mat4x4 mpvTransform = _getCurrentCamera()->getPV() * transform;
 
-		std::vector<Material> materialList = { mat };
+		std::vector<Material>materialList = { mat };
 
-		_renderer->addMeshToQueue(lost::standardQuad, materialList, mpvTransform, transform);
+		const Color& color = getNormalizedColor();
+
+		CompiledMeshData mesh = {};
+
+		mesh.vectorData = {
+			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f
+		};
+
+		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
+		mesh.materialSlotIndicies = { 0 };
+
+		_renderer->addRawToQueue(mesh, materialList, mpvTransform, transform);
 	}
 
 	void renderQuad(Material mat, Bounds2D bounds, Bounds2D texbounds)
@@ -841,13 +866,15 @@ namespace lost
 		bounds.w /= getWidth(currentWindow);
 		bounds.h /= getHeight(currentWindow);
 
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
 		CompiledMeshData mesh = {};
-		//   x --- y --- z               u ----------------------- v               r --- g --- b --- a   nx -- ny -- nz
 		mesh.vectorData = {
-			bounds.x,            1.0f - bounds.y,            0.0f, texbounds.x,               texbounds.y,               1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			bounds.x,            1.0f - bounds.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f
+			bounds.x,            1.0f - bounds.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			bounds.x + bounds.w, 1.0f - bounds.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			bounds.x + bounds.w, 1.0f - bounds.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			bounds.x,            1.0f - bounds.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
@@ -867,13 +894,16 @@ namespace lost
 
 	void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds)
 	{
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
 		CompiledMeshData mesh = {};
-		//   x ----- y ---- z               u ----------------------- v               r --- g --- b --- a   nx -- ny -- nz
+		//   x ----- y ---- z               u ----------------------- v               r ------- g ------ b ----- a   nx -- ny -- nz
 		mesh.vectorData = {
-			0.0f,   0.0f,   0.0f, texBounds.x,               texBounds.y,               1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			size.x, 0.0f,   0.0f, texBounds.x + texBounds.w, texBounds.y,               1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			size.x, size.y, 0.0f, texBounds.x + texBounds.w, texBounds.y + texBounds.h, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-			0.0f,   size.y, 0.0f, texBounds.x,               texBounds.y + texBounds.h, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f
+			0.0f,   0.0f,   0.0f, texBounds.x,               texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			size.x, 0.0f,   0.0f, texBounds.x + texBounds.w, texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			size.x, size.y, 0.0f, texBounds.x + texBounds.w, texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
+			0.0f,   size.y, 0.0f, texBounds.x,               texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
@@ -966,7 +996,7 @@ namespace lost
 		}
 
 		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, _renderer->_TempMeshUsesWorldTransform);
 		_renderer->_BuildingMesh = false;
 	}
 
@@ -994,12 +1024,21 @@ namespace lost
 		}
 
 		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, _renderer->_TempMeshUsesWorldTransform);
 		_renderer->_BuildingMesh = false;
+	}
+
+	void endMesh()
+	{
+		endMesh(lost::_getDefaultWhiteMaterial());
 	}
 
 	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord, Vec3 vertexNormal)
 	{
+		// Get current render color from state
+		vertexColor.normalize();
+		vertexColor *= getNormalizedColor();
+
 		// Create a vector of the vertex data
 		// [!] TODO: Convert this into a function just incase we change the format
 		std::vector<float> vertexData = {
@@ -1015,12 +1054,15 @@ namespace lost
 
 	void addVertex(Vertex& vertex)
 	{
+		// Get current render color from state
+		const Color& currentColor = getNormalizedColor();
+
 		// Create a vector of the vertex data
 		// [!] TODO: Convert this into a function just incase we change the format
 		std::vector<float> vertexData = {
 			vertex.position.x, vertex.position.y, vertex.position.z,
 			vertex.textureCoord.x, vertex.textureCoord.y,
-			vertex.vertexColor.x, vertex.vertexColor.y, vertex.vertexColor.z, vertex.vertexColor.w,
+			vertex.vertexColor.r * currentColor.r, vertex.vertexColor.g * currentColor.g, vertex.vertexColor.b * currentColor.b, vertex.vertexColor.a * currentColor.a,
 			vertex.vertexNormal.x, vertex.vertexNormal.y, vertex.vertexNormal.z
 		};
 

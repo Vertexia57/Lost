@@ -58,6 +58,9 @@ enum ZSortMode
 
 	// Uses depth, sorts in an unoptimal way but allows for transparency
 	LOST_ZSORT_DEPTH,
+
+	// Disables sorting, preserving order
+	LOST_ZSORT_NONE
 };
 
 namespace lost
@@ -84,7 +87,8 @@ namespace lost
 		inline unsigned int getZSortMode() const { return m_ZSortMode; };
 		inline void			setZSortMode(unsigned int mode) { m_ZSortMode = mode; };
 
-		void setTexture(const char* slotName, Texture texture);
+		void	setTexture(const char* slotName, Texture texture);
+		Texture getTexture(const char* slotName) const;
 
 		void bindTextures() const;
 		void bindShader() const;

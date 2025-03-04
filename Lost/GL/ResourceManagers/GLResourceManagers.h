@@ -28,11 +28,16 @@ namespace lost
 	void    forceUnloadTexture(const char* id);
 	void    forceUnloadTexture(Texture texture);
 
+	// Returns the name of the texture given
+	// NOTE: This is only used inside of the Lost engine, though it is static and has no effect
+	const char* _getTextureID(Texture texture);
+
 	// Takes the list of textures as the input into the shaders texture slots
 	// If shader is not set, uses the default shader. This shader changes based on which renderer is being used.
 	// RenderQueue is how it is ordered in rendering, lower is first, higher is last
 	Material makeMaterial(std::vector<Texture> textures, const char* id, Shader shader = nullptr, unsigned int renderQueue = LOST_SHADER_OPAQUE);
 	Material getMateral(const char* id);
+	std::vector<Material> loadMaterialsFromOBJMTL(const char* objFile);
 	void     destroyMaterial(const char* id);
 	void     destroyMaterial(Material material);
 	void     forceDestroyMaterial(const char* id);
@@ -46,6 +51,10 @@ namespace lost
 	void   unloadShader(Shader& shader);
 	void   forceUnloadShader(const char* id);
 	void   forceUnloadShader(Shader& shader);
+
+	// Returns the name of the shader given
+	// NOTE: This is only used inside of the Lost engine, though it is static and has no effect
+	const char* _getShaderID(Shader shader);
 
 	Mesh loadMesh(const char* objLoc, const char* id = nullptr);
 	Mesh makeMesh(MeshData& meshData, const char* id);

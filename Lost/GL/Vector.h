@@ -38,6 +38,10 @@ namespace lost
 			Vec2 xy;
 			float z;
 		};
+		struct
+		{
+			float r, g, b;
+		};
 		float v[3];
 	};
 
@@ -51,6 +55,10 @@ namespace lost
 		{
 			IVec2 xy;
 			int z;
+		};
+		struct
+		{
+			int r, g, b;
 		};
 		int v[3];
 	};
@@ -66,6 +74,10 @@ namespace lost
 			Vec3 xyz;
 			float w;
 		};
+		struct
+		{
+			float r, g, b, a;
+		};
 		float v[4];
 	};
 
@@ -79,6 +91,10 @@ namespace lost
 		{
 			IVec3 xyz;
 			int w;
+		};
+		struct
+		{
+			int r, g, b, a;
 		};
 		int v[4];
 	};

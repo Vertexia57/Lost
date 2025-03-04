@@ -126,4 +126,20 @@ namespace lost
 		}
 	}
 
+	void setFillColor(float r, float g, float b, float a)
+	{
+		_state.fillColor = { r, g, b, a };
+		_state.normalizedFillColor = _state.fillColor.normalized();
+	}
+
+	const Color& getFillColor()
+	{
+		return _state.fillColor;
+	}
+
+	const Color& getNormalizedColor()
+	{
+		return _state.normalizedFillColor;
+	}
+
 }

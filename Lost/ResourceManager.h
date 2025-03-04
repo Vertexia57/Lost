@@ -23,6 +23,7 @@ namespace lost
 		void addValue(T value, const char* id);
 
 		T getValue(const char* id) const;
+		const char* getIDByValue(T value) const;
 
 		int getValueCount() const;
 
@@ -66,6 +67,17 @@ namespace lost
 	inline T ResourceManager<T>::getValue(const char* id) const
 	{
 		return m_Data.at(id).data;
+	}
+
+	template<typename T>
+	inline const char* ResourceManager<T>::getIDByValue(T value) const
+	{
+		for (typename std::map<std::string, DataCount<T>>::const_iterator it = m_Data.begin(); it != m_Data.end(); it++)
+		{
+			if ((it->second).data == value)
+				return it->first.c_str();
+		}
+		return nullptr;
 	}
 
 	template<typename T>

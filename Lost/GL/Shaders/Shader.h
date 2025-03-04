@@ -41,16 +41,14 @@ namespace lost
 
 	class _Shader
 	{
-	private:
-
+	public:
 		struct UniformData
 		{
 			unsigned int type = 0;
 			unsigned int location = 0;
-			bool isEngine = false;
+			bool isEngine = false; // Specifies if the uniform is inbuilt
 		};
 
-	public:
 		// Default constructor, does nothing
 		_Shader();
 		// Builds shader using vsDir as the vertex shader directory and fsDir as the fragment shader directory
@@ -65,6 +63,7 @@ namespace lost
 		void bind();
 
 		inline const std::map<std::string, unsigned int>& getTextureNameMap() const { return m_TextureMap; };
+		inline const std::map<std::string, UniformData>& getUniformNameMap() const { return m_UniformMap; };
 
 		void setUniform(void* dataAt, const char* uniformName);
 

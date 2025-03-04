@@ -14,23 +14,17 @@ int main()
 	lost::setupImGui();
 
 	lost::Shader shader = lost::loadShader("data/vertex.vert", "data/fragment.frag", "phongLighting");
-
 	lost::Font font = lost::loadFont("data/PixeloidSans.ttf", 64.0f, "pixelFont");
-	lost::Texture tex = lost::loadTexture("data/emy.png");
-
-	lost::Mesh mayu = lost::loadMesh("data/mayu.obj", "mayu");
-	lost::Texture bodytex = lost::loadTexture("data/body.png", "body");
-	lost::Texture headtex = lost::loadTexture("data/head.png", "head");
-
-	lost::Material bodyMat = lost::makeMaterial({ bodytex }, "body", shader);
-	lost::Material headMat = lost::makeMaterial({ headtex }, "head", shader);
 
 	glm::vec3 cameraPosition = { 0.0f, 0.0f, 0.0f };
-
 	float camYaw = 0.0f;
 	float camPit = 0.0f;
 	float cameraSpeed = 0.1f;
 	bool cameraActive = true;
+
+	lost::Mesh nardoMesh = lost::loadMesh("data/Nardo.obj");
+	lost::Material matTest = lost::makeMaterial({ lost::loadTexture("data/emy.png") }, "emy", shader);
+	std::vector<lost::Material> nardoMaterials = lost::loadMaterialsFromOBJMTL("data/Nardo.obj");
 
 	while (lost::windowOpen())
 	{
@@ -85,6 +79,24 @@ int main()
 
 		lost::setCameraPosition(cameraPosition);
 		lost::cameraLookAtRelative(forwardVector);
+
+		lost::setCullMode(LOST_CULL_NONE);
+		lost::beginMesh();
+		lost::addVertex(lost::Vec3{ 0.0f, 0.0f, 0.0f });
+		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 0.0f });
+		lost::addVertex(lost::Vec3{ 1.0f, 1.0f, 0.0f });
+		lost::setFillColor(255, 0, 0);
+		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 1.0f });
+		lost::addVertex(lost::Vec3{ 0.0f, 0.0f, 0.0f });
+		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 0.0f });
+		lost::setFillColor(255, 255, 255);
+		lost::endMesh();
+		lost::setCullMode(LOST_CULL_AUTO);
+
+		lost::renderMesh(nardoMesh, nardoMaterials, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 00.0f });
+
+		//lost::setFillColor(255, 0, 255, 255);
+		//lost::renderRect(nardoMaterials[0], { 100.0f, 100.0f, 300.0f, 300.0f });
 
 
 		// ImGUI

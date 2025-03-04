@@ -22,6 +22,9 @@ namespace lost
 	bool _glfwInitialized = false;
 	Shader _defaultShader = nullptr;
 
+	Texture _defaultWhiteTexture = nullptr;
+	Material _defaultWhiteMaterial = nullptr;
+
 	std::stack<unsigned int> _windowContextStack;
 
 	// .cpp only function, runs the default hints for the currently enabled GLFW context
@@ -81,6 +84,11 @@ namespace lost
 
 		// If in 2D rendering mode transparency in the default shader
 		_defaultShader = new _Shader(nullptr, nullptr);
+
+		_defaultWhiteTexture = new _Texture();
+		const char whitePixel[4] = {255, 255, 255, 255};
+		_defaultWhiteTexture->makeTexture(whitePixel, 1, 1, LOST_FORMAT_RGBA);
+		_defaultWhiteMaterial = new _Material(_defaultShader, { _defaultWhiteTexture });
 	}
 
 	// Terminate GLFW and remove all window contexts from heap
@@ -96,6 +104,9 @@ namespace lost
 			delete context;
 		delete _invisibleContext;
 		delete _defaultShader;
+
+		delete _defaultWhiteTexture;
+		delete _defaultWhiteMaterial;
 	}
 
 	void _updateGL()
@@ -125,6 +136,16 @@ namespace lost
 			windowContext->camera->_updatePerspective(width, height);
 		}
 		lost::_resizeFrameBuffers(id, width, height);
+	}
+
+	const Material _getDefaultWhiteMaterial()
+	{
+		return _defaultWhiteMaterial;
+	}
+
+	const Texture _getDefaultWhiteTexture()
+	{
+		return _defaultWhiteTexture;
 	}
 
 	Window createWindow(int width, int height, const char* title)

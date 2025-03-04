@@ -9,6 +9,7 @@ namespace lost
 	{
 		m_Shader = shader;
 		m_Textures.resize(m_Shader->getTextureNameMap().size());
+		m_QueueLevel = renderQueue;
 
 		if (!textures.empty())
 		{
@@ -24,6 +25,11 @@ namespace lost
 	void _Material::setTexture(const char* slotName, Texture texture)
 	{
 		m_Textures[m_Shader->getTextureNameMap().at(slotName)] = texture;
+	}
+
+	Texture _Material::getTexture(const char* slotName) const
+	{
+		return m_Textures.at(m_Shader->getTextureNameMap().at(slotName));
 	}
 
 	void _Material::bindTextures() const

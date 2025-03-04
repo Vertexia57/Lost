@@ -120,14 +120,28 @@ namespace lost
 	void setPostProcessingShader(PPShader shader);
 
 	// Starts the creation of a mesh which will be rendered once endMesh() is ran
+	
+	/// <summary>
+	/// Begins creating a mesh. Works in tandum with endMesh(), addVertex() and setMeshTransform()
+	/// </summary>
+	/// <param name="meshMode">Mesh mode uses the LOST_MESH_xxx enum, this dictates what mode the mesh will be rendered in</param>
+	/// <param name="screenspace">Dictates whether the mesh uses screenspace coordinates</param>
 	void beginMesh(unsigned int meshMode = LOST_MESH_TRIANGLES, bool screenspace = false);
 	// Finishes the creation of a mesh and renders it, using the materials provided
 	void endMesh(std::vector<Material>& materials);
 	// Finishes the creation of a mesh and renders it, using the material provided
 	void endMesh(Material material);
+	// Finishes the creation of a mesh and renders it, using a default white material
+	void endMesh();
 
-	// Adds a vertex to the mesh being created, must be ran after beginMesh()
-	void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
+	/// <summary>
+	/// Adds a vertex to the mesh being created, must be ran after beginMesh()
+	/// </summary>
+	/// <param name="position">The 3D local position of the mesh</param>
+	/// <param name="vertexColor">The color of the vertex, from 0 - 255</param>
+	/// <param name="textureCoord">The texture coordinate or UV of the vertex</param>
+	/// <param name="vertexNormal">The normal of the vertex, by default (0, 0, 1)</param>
+	void addVertex(Vec3 position, Color vertexColor = { 255, 255, 255, 255 }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
 	// Adds a vertex to the mesh being created, must be ran after beginMesh()
 	void addVertex(Vertex& vertex);
 
@@ -285,14 +299,21 @@ namespace lost
 
 		static bool meshSortFunc(const MeshRenderData& lhs, const MeshRenderData& rhs)
 		{
+			// Check if ZSorting is disabled
+			if (lhs.ZSortMode == LOST_ZSORT_NONE || rhs.ZSortMode == LOST_ZSORT_NONE)
+				return false;
+			// Check if ZSorting is done by depth
+			if (lhs.ZSortMode == LOST_ZSORT_DEPTH || rhs.ZSortMode == LOST_ZSORT_DEPTH)
+				return (lhs.depthVal < rhs.depthVal);
+
+			// Normal ZSorting
+
+			// [!] TODO: Remove this and replace with LOST_ZSORT_NONE
 			if (lhs.depthMode == LOST_DEPTH_TEST_ALWAYS || rhs.depthMode == LOST_DEPTH_TEST_ALWAYS)
 			{
 				// No batching when using LOST_DEPTH_TEST_ALWAYS
 				// This is to preserve order when rendering
 				return false;
-
-				//if (lhs.depthMode != LOST_DEPTH_TEST_ALWAYS && rhs.depthMode == LOST_DEPTH_TEST_ALWAYS)
-				//	return true;
 			}
 
 			// Normal, has batching

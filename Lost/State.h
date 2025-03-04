@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "GL/Vector.h"
+#include "GL/Structs.h"
 
 #ifdef NDEBUG // VSCC default preprocessor
 //#define LOST_RELEASE_MODE
@@ -81,6 +82,12 @@ namespace lost
 
 		std::vector<RenderBufferData> buffersToAdd = {};
 		std::vector<RenderBufferData> currentBuffers = _default2DBuffers;
+
+		// This is the fill color used by the render when creating meshes
+		// This does not effect renderMesh()
+		Color fillColor = { 255, 255, 255, 255 };
+		// Normalized version of fillColor, saves operating time to cache it
+		Color normalizedFillColor = { 1.0f, 1.0f, 1.0f, 1.0f }; 
 	};
 
 	// Sets the mode of the error state at the enum given's location, uses the enum ErrorMode
@@ -107,4 +114,12 @@ namespace lost
 	// Reverts the current Lost State to it's default settings
 	void setDefaultMode();
 
+	// Setrs the fill color used by the render when creating meshes
+	// This does not effect renderMesh()
+	void setFillColor(float r, float g, float b, float a = 255.0f);
+
+	// Returns the fill color currently set in the state machine
+	const Color& getFillColor();
+	// Returns the fill color, normalized, currently set in the state machine
+	const Color& getNormalizedColor();
 }

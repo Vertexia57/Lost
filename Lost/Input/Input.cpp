@@ -80,6 +80,12 @@ namespace lost
 
 	void _windowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
+		if (key > LOST_KEY_LAST || key < LOST_KEY_FIRST)
+		{
+			debugLogIf(key != -1, std::string("Unknown key input with code: ") + std::to_string(key), LOST_LOG_WARNING_NO_NOTE);
+			return;
+		}
+
 		if (action == GLFW_PRESS)
 		{
 			inputManager.keysTapped[key - LOST_KEY_FIRST] = true;
