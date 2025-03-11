@@ -69,7 +69,6 @@ namespace lost
 	// Sets every value of the camera at once, is much more efficient than running all 3 seperately
 	void setCameraTransform(const glm::vec3& translate, const glm::vec3& rotation, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f });
 	
-	// [!] TODO: Allow for depth testing to change based on the material, like unity, override this when using 2D rendering
 	// Sets the current camera's projection to screenspace, making rendering 2D (with depth testing)
 	void cameraUseScreenSpace();
 	// Sets the current camera's projection to projected, making rendering 3D

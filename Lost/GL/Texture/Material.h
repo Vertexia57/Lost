@@ -66,6 +66,16 @@ enum ZSortMode
 namespace lost
 {
 
+	// Specifies a uniform that is set by the material
+	struct MaterialUniform
+	{
+		std::string uniformID = "";
+		unsigned int location = -1;
+
+		void* data = nullptr; // Pointer of data
+		unsigned int type = LOST_ERROR; // Data type of the data
+	};
+
 	class _Material
 	{
 	public:
@@ -73,7 +83,9 @@ namespace lost
 		~_Material();
 
 		inline Shader getShader() const { return m_Shader; };
+
 		inline unsigned int getQueueLevel() const { return m_QueueLevel; };
+		inline void         setQueueLevel(unsigned int queueLevel) { m_QueueLevel = queueLevel; };
 
 		inline unsigned int getDepthTestFunc() const { return m_DepthTestFunc; };
 		inline void			setDepthTestFunc(unsigned int func) { m_DepthTestFunc = func; };
@@ -93,6 +105,12 @@ namespace lost
 		void bindTextures() const;
 		void bindShader() const;
 
+		inline bool hasMaterialUniforms() const { return !m_MaterialUniforms.empty(); };
+		void setMaterialUniform(const char* uniformName, const void* data, unsigned int dataType);
+		void deleteMaterialUniforms();
+		inline const std::vector<MaterialUniform>& getMaterialUniforms() const { return m_MaterialUniforms; };
+		void bindMaterialUniforms();
+
 	private:
 		unsigned int m_QueueLevel;
 
@@ -111,9 +129,21 @@ namespace lost
 
 		Shader m_Shader;
 		std::vector<Texture> m_Textures;
+		std::vector<MaterialUniform> m_MaterialUniforms;
 	};
 
 	// A reference to a material
 	typedef _Material* Material;
 
+	// [!] TODO: Documentation
+	
+	/// <summary>
+	/// Will set a value in the material which when the material is used will set a uniform in the shader
+	/// This is useful if the material needs to set specific values that aren't textures, like specular intensity and likewise.
+	/// </summary>
+	/// <param name="mat">The material to apply to</param>
+	/// <param name="uniformName">The name of the uniform within the shader</param>
+	/// <param name="data">The address of the data given (cast to void*)</param>
+	/// <param name="dataType">The data type following LOST_xxxx where x is the type</param>
+	void setMaterialUniform(Material mat, const char* uniformName, const void* data, unsigned int dataType);
 }

@@ -112,6 +112,9 @@ namespace lost
 			glClearBufferfv(GL_COLOR, i, renderBuffer.defaultColor.v);
 		}
 
+		glClearDepth(1.0f);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
 #ifndef IMGUI_DISABLE
 		if (m_UsingImGui && getCurrentWindow()->_hasImGui)
 		{
@@ -204,50 +207,54 @@ namespace lost
 		// [ VERTEX BUFFER BOUND ]
 
 		// Position
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 16 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 
 		// TexCoord
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1); 
 
 		// Color
-		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(5 * sizeof(float)));
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(float), (void*)(5 * sizeof(float)));
 		glEnableVertexAttribArray(2);
 
 		// Normal
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(9 * sizeof(float)));
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 16 * sizeof(float), (void*)(9 * sizeof(float)));
 		glEnableVertexAttribArray(3);
+
+		// Tangent
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(float), (void*)(12 * sizeof(float)));
+		glEnableVertexAttribArray(4);
 
 		// Bind matrix buffer mat4x4's are stored as 4 * vec4's
 		glBindBuffer(GL_ARRAY_BUFFER, MBO);
-		glVertexAttribPointer(4,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, 0);
-		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(5,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(4  * sizeof(float)));
+		glVertexAttribPointer(5,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, 0);
 		glEnableVertexAttribArray(5);
-		glVertexAttribPointer(6,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(8  * sizeof(float)));
+		glVertexAttribPointer(6,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(4  * sizeof(float)));
 		glEnableVertexAttribArray(6);
-		glVertexAttribPointer(7,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(12 * sizeof(float)));
+		glVertexAttribPointer(7,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(8  * sizeof(float)));
 		glEnableVertexAttribArray(7);
-
-		glVertexAttribPointer(8,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(16 * sizeof(float)));
+		glVertexAttribPointer(8,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(12 * sizeof(float)));
 		glEnableVertexAttribArray(8);
-		glVertexAttribPointer(9,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(20 * sizeof(float)));
-		glEnableVertexAttribArray(9);
-		glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(24 * sizeof(float)));
-		glEnableVertexAttribArray(10);
-		glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(28 * sizeof(float)));
-		glEnableVertexAttribArray(11);
 
-		glVertexAttribDivisor(4, 1); // Make it so this input only updates once per INSTANCE rather than per vertex
-		glVertexAttribDivisor(5, 1);
+		glVertexAttribPointer(9,  4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(16 * sizeof(float)));
+		glEnableVertexAttribArray(9);
+		glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(20 * sizeof(float)));
+		glEnableVertexAttribArray(10);
+		glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(24 * sizeof(float)));
+		glEnableVertexAttribArray(11);
+		glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4x4) * 2, (void*)(28 * sizeof(float)));
+		glEnableVertexAttribArray(12);
+
+		glVertexAttribDivisor(5, 1); // Make it so this input only updates once per INSTANCE rather than per vertex
 		glVertexAttribDivisor(6, 1);
 		glVertexAttribDivisor(7, 1);
+		glVertexAttribDivisor(8, 1);
 
-		glVertexAttribDivisor(8,  1);
 		glVertexAttribDivisor(9,  1);
 		glVertexAttribDivisor(10, 1);
 		glVertexAttribDivisor(11, 1);
+		glVertexAttribDivisor(12, 1);
 
 		// Bind index buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -259,6 +266,16 @@ namespace lost
 		glClearBufferfv(GL_COLOR, 0, color.v);
 		glClearDepth(1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+
+	void Renderer::setPassClearColor(unsigned int passID, Color color)
+	{
+		const std::vector<Window>& windows = lost::getWindows();
+		for (int i = 0; i < windows.size(); i++)
+		{
+			RenderBufferData& renderBuffer = m_MainRenderPasses[i]->storedBuffers[passID];
+			renderBuffer.defaultColor = { color.r, color.g, color.b, color.a };
+		}
 	}
 
 #pragma endregion
@@ -309,7 +326,7 @@ namespace lost
 
 			// Vertex Buffer Data
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)m_CurrentMeshID)->vectorData.size() * sizeof(float), ((CompiledMeshData*)m_CurrentMeshID)->vectorData.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)m_CurrentMeshID)->vertexData.size() * sizeof(float), ((CompiledMeshData*)m_CurrentMeshID)->vertexData.data(), GL_STATIC_DRAW);
 			// Matrix Buffer Data
 			glBindBuffer(GL_ARRAY_BUFFER, MBO);
 			glBufferData(GL_ARRAY_BUFFER, m_TransformArray.size() * sizeof(glm::mat4x4), m_TransformArray.data(), GL_STATIC_DRAW);
@@ -339,7 +356,7 @@ namespace lost
 
 		// Vertex Buffer Data
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->vectorData.size() * sizeof(float), ((CompiledMeshData*)standardQuad)->vectorData.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->vertexData.size() * sizeof(float), ((CompiledMeshData*)standardQuad)->vertexData.data(), GL_STATIC_DRAW);
 		// Matrix Buffer Data
 		glBindBuffer(GL_ARRAY_BUFFER, MBO);
 		glBufferData(GL_ARRAY_BUFFER, 1 * sizeof(glm::mat4x4), &transform, GL_STATIC_DRAW);
@@ -347,9 +364,14 @@ namespace lost
 		glBindBuffer(GL_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->indexData.size() * sizeof(int), ((CompiledMeshData*)standardQuad)->indexData.data(), GL_STATIC_DRAW);
 
-		glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->textures[0]);
+		//glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->textures[0]);
+		_getDefaultWhiteTexture()->bind(0);
 
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
 		glDrawElementsInstanced(GL_TRIANGLES, ((CompiledMeshData*)standardQuad)->indexData.size(), GL_UNSIGNED_INT, 0, 1);
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
 
 		Renderer::finalize();
 	}
@@ -425,7 +447,7 @@ namespace lost
 	void Renderer3D::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite)
 	{
 		CompiledMeshData* newMesh = new CompiledMeshData{
-			meshData.vectorData,
+			meshData.vertexData,
 			meshData.materialSlotIndicies,
 			meshData.indexData,
 			meshData.meshRenderMode
@@ -477,9 +499,9 @@ namespace lost
 			glBindVertexArray(VAOs[getCurrentWindowID()]);
 			// Vertex Buffer Data
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vectorData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vectorData.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW);
 
-			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vectorData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vectorData.data(), GL_STATIC_DRAW); // [!] TODO: WTF?
+			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW); // [!] TODO: WTF?
 
 			// Create transform list, reserving the maximum size that could occur
 			std::vector<glm::mat4x4> transforms;
@@ -557,7 +579,7 @@ namespace lost
 
 						// Vertex Buffer Data
 						glBindBuffer(GL_ARRAY_BUFFER, VBO);
-						glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vectorData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vectorData.data(), GL_STATIC_DRAW);
+						glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW);
 
 					}
 
@@ -569,6 +591,9 @@ namespace lost
 
 						currentMaterial = renderData.material;
 						currentMaterial->bindTextures();
+
+						if (currentMaterial->hasMaterialUniforms())
+							currentMaterial->bindMaterialUniforms();
 					}
 
 				}
@@ -628,7 +653,7 @@ namespace lost
 		glBindVertexArray(VAOs[getCurrentWindowID()]);
 		// Vertex Buffer Data
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->vectorData.size() * sizeof(float), ((CompiledMeshData*)standardQuad)->vectorData.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->vertexData.size() * sizeof(float), ((CompiledMeshData*)standardQuad)->vertexData.data(), GL_STATIC_DRAW);
 		// Matrix Buffer Data
 		glBindBuffer(GL_ARRAY_BUFFER, MBO);
 		glBufferData(GL_ARRAY_BUFFER, 1 * sizeof(glm::mat4x4), &transform, GL_STATIC_DRAW);
@@ -642,6 +667,9 @@ namespace lost
 			glActiveTexture(GL_TEXTURE0 + i);
 			glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->textures[i]);
 		}
+
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->depthStencilTexture);
 
 		// Bind post processing shader
 		m_CurrentPPShader.bind();
@@ -687,10 +715,10 @@ namespace lost
 
 		lost::MeshData data;
 		data.verticies = {
-			{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
-			{ 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
-			{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
-			{ 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f }
+			{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f },
+			{ 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f },
+			{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f },
+			{ 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f },
 		};
 		data.indexArray = { 0, 2, 1, 2, 0, 3 };
 		data.materialSlotIndicies = { 0 };
@@ -757,6 +785,11 @@ namespace lost
 		_renderer->fillWindow(color);
 	}
 
+	void setPassClearColor(unsigned int passID, Color color)
+	{
+		_renderer->setPassClearColor(passID, color);
+	}
+
 	void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform)
 	{
 		glm::mat4x4 outTransform;
@@ -811,11 +844,11 @@ namespace lost
 
 		const Color& color = getNormalizedColor();
 		CompiledMeshData mesh = {};
-		mesh.vectorData = {
-			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f
+		mesh.vertexData = {
+			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
@@ -844,11 +877,11 @@ namespace lost
 
 		CompiledMeshData mesh = {};
 
-		mesh.vectorData = {
-			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f
+		mesh.vertexData = {
+			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
@@ -870,11 +903,11 @@ namespace lost
 		const Color& color = getNormalizedColor();
 
 		CompiledMeshData mesh = {};
-		mesh.vectorData = {
-			bounds.x,            1.0f - bounds.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			bounds.x,            1.0f - bounds.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f
+		mesh.vertexData = {
+			bounds.x,            1.0f - bounds.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			bounds.x + bounds.w, 1.0f - bounds.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			bounds.x + bounds.w, 1.0f - bounds.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			bounds.x,            1.0f - bounds.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
@@ -899,11 +932,11 @@ namespace lost
 
 		CompiledMeshData mesh = {};
 		//   x ----- y ---- z               u ----------------------- v               r ------- g ------ b ----- a   nx -- ny -- nz
-		mesh.vectorData = {
-			0.0f,   0.0f,   0.0f, texBounds.x,               texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			size.x, 0.0f,   0.0f, texBounds.x + texBounds.w, texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			size.x, size.y, 0.0f, texBounds.x + texBounds.w, texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f,
-			0.0f,   size.y, 0.0f, texBounds.x,               texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f
+		mesh.vertexData = {
+			0.0f,   0.0f,   0.0f, texBounds.x,               texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			size.x, 0.0f,   0.0f, texBounds.x + texBounds.w, texBounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			size.x, size.y, 0.0f, texBounds.x + texBounds.w, texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f,   size.y, 0.0f, texBounds.x,               texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
@@ -1033,7 +1066,7 @@ namespace lost
 		endMesh(lost::_getDefaultWhiteMaterial());
 	}
 
-	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord, Vec3 vertexNormal)
+	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord)
 	{
 		// Get current render color from state
 		vertexColor.normalize();
@@ -1045,10 +1078,11 @@ namespace lost
 			position.x, position.y, position.z,
 			textureCoord.x, textureCoord.y,
 			vertexColor.r, vertexColor.g, vertexColor.b, vertexColor.a,
-			vertexNormal.x, vertexNormal.y, vertexNormal.z
+			0.0f, 0.0f, 0.0f, 
+			0.0f, 0.0f, 0.0f, 0.0f // Normal, Tangent
 		};
 		// Append the data to the end of the list
-		_renderer->_TempMeshBuild.vectorData.insert(_renderer->_TempMeshBuild.vectorData.end(), vertexData.begin(), vertexData.end());
+		_renderer->_TempMeshBuild.vertexData.insert(_renderer->_TempMeshBuild.vertexData.end(), vertexData.begin(), vertexData.end());
 		_renderer->_TempMeshBuild.indexData.push_back(_renderer->_TempMeshBuild.indexData.size());
 	}
 
@@ -1063,11 +1097,12 @@ namespace lost
 			vertex.position.x, vertex.position.y, vertex.position.z,
 			vertex.textureCoord.x, vertex.textureCoord.y,
 			vertex.vertexColor.r * currentColor.r, vertex.vertexColor.g * currentColor.g, vertex.vertexColor.b * currentColor.b, vertex.vertexColor.a * currentColor.a,
-			vertex.vertexNormal.x, vertex.vertexNormal.y, vertex.vertexNormal.z
+			0.0f, 0.0f, 0.0f, 
+			0.0f, 0.0f, 0.0f, 0.0f // Normal, Tangent
 		};
 
 		// Append the data to the end of the list
-		_renderer->_TempMeshBuild.vectorData.insert(_renderer->_TempMeshBuild.vectorData.end(), vertexData.begin(), vertexData.end());
+		_renderer->_TempMeshBuild.vertexData.insert(_renderer->_TempMeshBuild.vertexData.end(), vertexData.begin(), vertexData.end());
 		_renderer->_TempMeshBuild.indexData.push_back(_renderer->_TempMeshBuild.indexData.size());
 	}
 

@@ -199,7 +199,7 @@ namespace ImGui
 		239,32,57,141,239,32,57,141,239,32,57,141,239,32,57,141,239,32,57,141,239,35,57,102,0,0,5,250,72,249,98,247,
 	};
 
-	static bool renderFrameContent(const char* title, bool* value)
+	static bool renderFrameContent(const char* title, bool* value, void(*insert)())
 	{
 		ImGui::BeginGroup();
 		ImGui::PushID("frame");
@@ -263,6 +263,12 @@ namespace ImGui
 
 		ImGui::PopID();
 		ImGui::EndGroup();
+
+		if (insert)
+		{
+			ImGui::SetCursorScreenPos(ImVec2(offsetX + screenPosX, offsetY + screenPosY));
+			(*insert)();
+		}
 
 		return *value;
 	}
@@ -340,18 +346,19 @@ namespace ImGui
 		ImVec2 vec = ImGui::GetCursorScreenPos();
 		float screenPosX = vec.x;
 		float screenPosY = vec.y;
-		float windowWidth = ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x;
+		float windowWidth = ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x - sizeX;
 
 		ImGui::BeginGroup();
 
 		ImGui::BeginGroup();
 		ImGui::PushID("id");
 
+		bool isDisabled = (g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
 		// Checks to see if the whole window is hovered
 		// This is to make sure that it isn't activated behind another window
 		bool isWindowHovered = ImGui::IsWindowHovered();
 		// Checks to see if the mouse is over the area given
-		bool hovered = ImGui::IsMouseHoveringRect(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight));
+		bool hovered = ImGui::IsMouseHoveringRect(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight)) && !isDisabled;
 
 		ImColor whiteColor = ImGui::GetColorU32(ImVec4(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f));
 
@@ -366,6 +373,9 @@ namespace ImGui
 			if (ImGui::IsMouseReleased(0))
 				*isOpen = !*isOpen;
 		}
+
+		if (isDisabled)
+			*isOpen = false;
 
 		int borderRound = 4;
 		int roundingCorners = ImDrawFlags_RoundCornersAll;
@@ -387,18 +397,90 @@ namespace ImGui
 		ImGui::ItemSize(ImVec2(windowWidth, getFrameHeight - offset));
 		g.Style.ItemSpacing.y = bk;
 
-		float y = ImGui::GetCursorPosY();
-
-		ImVec2 vec2 = ImGui::GetCursorScreenPos();
-
-		float height = screenPosY + getFrameHeight;
-
-		vec2 = ImGui::GetCursorScreenPos();
-
 		if (flag)
 			ImGui::BeginChildEx(id, windowWidth, paddingX, paddingY);
 		return flag;
-	};
+	}
+
+	bool BeginCollapsingHeaderWithInsert(const char* id, const char* title, void(*titleInsert)(), bool* isOpen, float sizeX, float paddingX, float paddingY)
+	{
+		// Allows for the use of a custom persistent bool
+		if (isOpen == nullptr)
+		{
+			if (_IDToggleMap.count(id)) // Check if the ID Toggle Map already has a key with this ID
+				isOpen = _IDToggleMap.at(id); // Use that value as this headers persistent bool
+			else
+			{
+				isOpen = new bool(false); // The ID doesn't exist in the ID Toggle Map, create it
+				_IDToggleMap[id] = isOpen; // Put it in the ID Toggle map
+			}
+		}
+
+		ImGuiStyle& style = ImGui::GetStyle();
+		ImGuiContext& g = *GImGui;
+		float getFrameHeight = ImGui::GetFrameHeight();
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+		ImVec2 vec = ImGui::GetCursorScreenPos();
+		float screenPosX = vec.x;
+		float screenPosY = vec.y;
+		float windowWidth = ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x;
+
+		ImGui::BeginGroup();
+
+		ImGui::BeginGroup();
+		ImGui::PushID("id");
+
+		bool isDisabled = (g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
+		// Checks to see if the whole window is hovered
+		// This is to make sure that it isn't activated behind another window
+		bool isWindowHovered = ImGui::IsWindowHovered();
+		// Checks to see if the mouse is over the area given
+		bool hovered = ImGui::IsMouseHoveringRect(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight)) && !isDisabled;
+
+		ImColor whiteColor = ImGui::GetColorU32(ImVec4(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f));
+
+		// The color of the header, turns blue if hovered
+		ImU32 frameColor = hovered && isWindowHovered ?
+			ImGui::GetColorU32(style.Colors[ImGuiCol_HeaderHovered]) :
+			ImGui::GetColorU32(ImVec4(0x24 / 255.0f, 0x24 / 255.0f, 0x24 / 255.0f, 255 / 255.0f));
+
+		if (isWindowHovered && hovered) {
+			if (ImGui::IsMouseDown(0))
+				frameColor = ImGui::GetColorU32(style.Colors[ImGuiCol_HeaderActive]);
+			if (ImGui::IsMouseReleased(0))
+				*isOpen = !*isOpen;
+		}
+
+		if (isDisabled)
+			*isOpen = false;
+
+		int borderRound = 4;
+		int roundingCorners = ImDrawFlags_RoundCornersAll;
+		// Add header to draw list
+		drawList->AddRectFilled(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight), frameColor, borderRound, roundingCorners);
+
+		bool flag = renderFrameContent(title, isOpen, titleInsert);
+
+		ImGui::PopID();
+		ImGui::EndGroup();
+
+		float bk = g.Style.ItemSpacing.y;
+		g.Style.ItemSpacing.y = 0;
+		int offset = 0;
+
+		if (flag)
+			offset = bk;
+
+		ImGui::SetCursorScreenPos(ImVec2(vec.x, vec.y + bk));
+
+		ImGui::ItemSize(ImVec2(windowWidth, getFrameHeight - offset));
+		g.Style.ItemSpacing.y = bk;
+		if (flag)
+			ImGui::BeginChildEx(id, windowWidth, paddingX, paddingY);
+		return flag;
+	}
 
 
 	void EndCollapsingHeaderEx(bool isOpen)
@@ -666,6 +748,27 @@ namespace lost
 
 	std::vector<_imGuiTextureViewer*> textureViews;
 
+	struct UniformSelection
+	{
+		int selectedUniformIndex = 0;
+
+		const char* selectedUniformName = nullptr;
+		bool liveSet = false;
+
+		unsigned int offset = 0;
+
+		union
+		{
+			float		  fv[4] = { 0b0, 0b0, 0b0, 0b0 };
+			int			  iv[4];
+			unsigned int uiv[4];
+			double		  dv[4];
+			bool          bv[4];
+		};
+	};
+
+	std::map<std::string, UniformSelection> uniformSelectors;
+
 	// Is ran inside of a child window
 	void _imGuiDisplayTextureAssetList()
 	{
@@ -681,6 +784,13 @@ namespace lost
 
 		// Loop through all loaded textures
 		const std::map<std::string, DataCount<Texture>>& dataMap = _textureRM->getDataMap();
+
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Textures Loaded...");
+			return;
+		}
+
 		int index = 0;
 		for (typename std::map<std::string, DataCount<Texture>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
@@ -718,6 +828,11 @@ namespace lost
 	void _imGuiDisplayMaterialAssetList()
 	{
 		const std::map<std::string, DataCount<Material>>& dataMap = _materialRM->getDataMap();
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Materials Loaded...");
+			return;
+		}
 
 		for (typename std::map<std::string, DataCount<Material>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
@@ -738,6 +853,7 @@ namespace lost
 
 				// Display material properties, like culling settings
 				ImGui::SeparatorText("Material Textures");
+#pragma region MaterialTextures
 
 				ImGui::Text("Texture Inputs:");
 				// Loop over the texture slots of the shader
@@ -773,112 +889,302 @@ namespace lost
 						}
 					}
 				}
+#pragma endregion
 
 				// Display material uniforms
 				ImGui::SeparatorText("Material Uniforms");
+#pragma region MaterialUniforms
 
-				const std::map<std::string, _Shader::UniformData>& shaderUniformNameMap = it->second.data->getShader()->getUniformNameMap();
-				if (!shaderUniformNameMap.empty()) // Skip iterating over the map if it's empty
+				// [!] TODO: Make this display the editable values at face value, and a
+				// [!]       tooltip which shows the info, or an openable
+
+				const std::vector<lost::MaterialUniform>& materialUniformList = it->second.data->getMaterialUniforms();
+				if (!materialUniformList.empty()) // Check if the material has any set uniforms
 				{
-					for (typename std::map<std::string, _Shader::UniformData>::const_iterator shaderIt = shaderUniformNameMap.begin(); shaderIt != shaderUniformNameMap.end(); shaderIt++)
+					for (const lost::MaterialUniform& uniform : materialUniformList)
 					{
-						if (!shaderIt->second.isEngine)
+						ImGui::BulletText("%s:", uniform.uniformID.c_str());
+						ImGui::SameLine();
+						ImGui::PushID(uniform.uniformID.c_str());
+						switch (uniform.type)
 						{
-							ImGui::Bullet();
+						case LOST_FLOAT:
+							ImGui::DragFloat("##set", (float*)uniform.data, 0.1f);
+							break;
+						case LOST_VEC2:
+							ImGui::DragFloat2("##set", (float*)uniform.data, 0.1f);
+							break;
+						case LOST_VEC3:
+							ImGui::DragFloat3("##set", (float*)uniform.data, 0.1f);
+							break;
+						case LOST_VEC4:
+							ImGui::DragFloat4("##set", (float*)uniform.data, 0.1f);
+							break;
+						case LOST_INT:
+							ImGui::DragInt("##set", (int*)uniform.data);
+							break;
+						case LOST_IVEC2:
+							ImGui::DragInt2("##set", (int*)uniform.data);
+							break;
+						case LOST_IVEC3:
+							ImGui::DragInt3("##set", (int*)uniform.data);
+							break;
+						case LOST_IVEC4:
+							ImGui::DragInt4("##set", (int*)uniform.data);
+							break;
+						case LOST_UINT:
+							ImGui::DragInt("##set", (int*)(uniform.data), 1.0f, 0);
+							break;
+						case LOST_UVEC2:
+							ImGui::DragInt2("##set", (int*)(uniform.data), 1.0f, 0);
+							break;
+						case LOST_UVEC3:
+							ImGui::DragInt3("##set", (int*)(uniform.data), 1.0f, 0);
+							break;
+						case LOST_UVEC4:
+							ImGui::DragInt4("##set", (int*)(uniform.data), 1.0f, 0);
+							break;
+						//case LOST_DOUBLE:
+						//	ImGui::DragFloat("##set", (float*)uniform.data, 0.1f);
+						//	break;
+						//case LOST_DVEC2:
+						//	ImGui::DragFloat2("##set", (float*)uniform.data, 0.1f);
+						//	break;
+						//case LOST_DVEC3:
+						//	ImGui::DragFloat3("##set", (float*)uniform.data, 0.1f);
+						//	break;
+						//case LOST_DVEC4:
+						//	ImGui::DragFloat4("##set", (float*)uniform.data, 0.1f);
+						//	break;
+						case LOST_BOOL:
+							ImGui::Checkbox("##setA", (bool*)uniform.data);
+							break;
+						case LOST_BVEC2:
+							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
+							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool));
+							break;
+						case LOST_BVEC3:
+							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
+							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							ImGui::Checkbox("##setC", (bool*)uniform.data + 2 * sizeof(float) / sizeof(bool));
+							break;
+						case LOST_BVEC4:
+							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
+							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							ImGui::Checkbox("##setC", (bool*)uniform.data + 2 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							ImGui::Checkbox("##setD", (bool*)uniform.data + 3 * sizeof(float) / sizeof(bool));
+							break;
+						default:
+							ImGui::TextDisabled("Unable to set this value");
+							break;
+						}
+						ImGui::PopID();
+
+						ImGui::SameLine();
+						ImGui::TextDisabled("(?)");
+						if (ImGui::BeginItemTooltip())
+						{
+							ImGui::BulletText("Name: %s", uniform.uniformID.c_str());
+							ImGui::BulletText("Location:");
 							ImGui::SameLine();
-							ImGui::Text("%s:", shaderIt->first.c_str());
+							if (uniform.location != -1)
+								ImGui::Text("%i", uniform.location);
+							else
+							{
+								ImGui::TextDisabled("Not in shader...");
+								ImGui::SetItemTooltip("The uniform was either not in the shader or optimized out of it");
+							}
+
+							ImGui::BulletText("Type:");
+							ImGui::SameLine();
+							if (uniform.type != LOST_STRUCT)
+								ImGui::TextColored(ImColor(135, 191, 255, 255), _UniformIDName.at(uniform.type).c_str());
+							else
+							{
+								ImGui::TextColored(ImColor(237, 93, 83, 255), "Struct");
+								ImGui::SetItemTooltip("The uniform type was either a struct or unknown");
+							}
+
+							ImGui::EndTooltip();
 						}
 					}
 				}
 				else
-					ImGui::TextDisabled("Shader used has no modifiable uniforms");
+				{
+					ImGui::TextDisabled("Material has no set uniforms");
+				}
+#pragma endregion
 
 				// Display material properties, like culling settings
 				ImGui::SeparatorText("Material Properties");
 
 				// Display cull mode
 				ImGui::Text("Cull Mode:");
+#pragma region CullMode
+				//ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcItemWidth() - ImGui::CalcTextSize("(?)").x);
 				ImGui::SameLine();
-				switch (it->second.data->getFaceCullMode())
 				{
-				case LOST_CULL_AUTO:
-					ImGui::TextColored(ImColor(237, 93, 83, 255), "Auto (Materials should not be this value!)");
-					ImGui::SetItemTooltip("This value is reserved for the renderer's \"Cull Override\"");
-					break;
-				case LOST_CULL_BACK:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Back (default)");
-					ImGui::SetItemTooltip("Culls the back face of rendered polygons");
-					break;
-				case LOST_CULL_FRONT:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Front");
-					ImGui::SetItemTooltip("Culls the front face of rendered polygons");
-					break;
-				case LOST_CULL_FRONT_AND_BACK:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Front and back");
-					ImGui::SetItemTooltip("Culls the both faces of rendered polygons (Doesn't cull lines or points)");
-					break;
-				case LOST_CULL_NONE:
-					ImGui::TextColored(ImColor(80, 107, 138, 255), "None/Disabled");
-					ImGui::SetItemTooltip("Doesn't cull anything");
-					break;
-				default:
-					ImGui::TextColored(ImColor(237, 93, 83, 255), "Unknown");
-					ImGui::SetItemTooltip("The value set for the cull mode is unknown");
-					break;
+					int item_current = 1;
+					switch (it->second.data->getFaceCullMode())
+					{
+					case LOST_CULL_NONE:
+						item_current = 0;
+						break;
+					case LOST_CULL_FRONT:
+						item_current = 1;
+						break;
+					case LOST_CULL_BACK:
+						item_current = 2;
+						break;
+					case LOST_CULL_FRONT_AND_BACK:
+						item_current = 3;
+						break;
+					default:
+						break;
+					}
+					int item_old = item_current;
+					const char* items[] = { "None", "Front", "Back", "Front and back" };
+					unsigned int enumVals[] = {
+						LOST_CULL_NONE,
+						LOST_CULL_FRONT,
+						LOST_CULL_BACK,
+						LOST_CULL_FRONT_AND_BACK
+					};
+					ImGui::Combo("##Cull Func", &item_current, items, IM_ARRAYSIZE(items), 4);
+
+					if (item_old != item_current)
+						it->second.data->setFaceCullMode(enumVals[item_current]);
+
+					ImGui::SameLine();
+					ImGui::TextDisabled("(?)");
+					switch (it->second.data->getFaceCullMode())
+					{
+					case LOST_CULL_AUTO:
+						ImGui::SetItemTooltip("This value is reserved for the renderer's \"Cull Override\"");
+						break;
+					case LOST_CULL_BACK:
+						ImGui::SetItemTooltip("Culls the back face of rendered polygons");
+						break;
+					case LOST_CULL_FRONT:
+						ImGui::SetItemTooltip("Culls the front face of rendered polygons");
+						break;
+					case LOST_CULL_FRONT_AND_BACK:
+						ImGui::SetItemTooltip("Culls the both faces of rendered polygons (Doesn't cull lines or points)");
+						break;
+					case LOST_CULL_NONE:
+						ImGui::SetItemTooltip("Doesn't cull anything");
+						break;
+					default:
+						ImGui::SetItemTooltip("The value set for the cull mode is unknown");
+						break;
+					}
 				}
+#pragma endregion
 
 				// Display depth test function
 				ImGui::Text("Depth Test Function:");
+#pragma region DepthTestFunction
 				ImGui::SameLine();
-				switch (it->second.data->getDepthTestFunc())
 				{
-				case LOST_DEPTH_TEST_LEQUAL:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Less than or equal");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is less than or equal to the depth buffer");
-					break;
-				case LOST_DEPTH_TEST_LESS:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Less than");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is less than the depth buffer");
-					break;
-				case LOST_DEPTH_TEST_GEQUAL:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Greater than or equal");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is greater than or equal to the depth buffer");
-					break;
-				case LOST_DEPTH_TEST_GREATER:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Greater than");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is greater than the depth buffer");
-					break;
-				case LOST_DEPTH_TEST_NEVER:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Never");
-					ImGui::SetItemTooltip("Never renders the pixel");
-					break;
-				case LOST_DEPTH_TEST_ALWAYS:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Always");
-					// [!] TODO: Figure out if this batching toggle should instead be tied to the ZSort setting in the material
-					ImGui::SetItemTooltip("Always renders the pixel, disables batching to preserve order");
-					break;
-				case LOST_DEPTH_TEST_AUTO:
-					ImGui::TextColored(ImColor(237, 93, 83, 255), "Auto (This should not be set on a material!)");
-					ImGui::SetItemTooltip("Should not be set in a material, this is reserved for the renderer");
-					break;
-				case LOST_DEPTH_TEST_EQUAL:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Equal");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is equal to the depth buffer");
-					break;
-				case LOST_DEPTH_TEST_NOTEQUAL:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Not Equal");
-					ImGui::SetItemTooltip("Only renders the pixel if the depth is not equal to the depth buffer");
-					break;
-				default:
-					ImGui::TextColored(ImColor(237, 93, 83, 255), "Unknown");
-					ImGui::SetItemTooltip("The depth test function value is unknown");
-					break;
+					int item_current = 1;
+					switch (it->second.data->getDepthTestFunc())
+					{
+					case LOST_DEPTH_TEST_NEVER:
+						item_current = 0;
+						break;
+					case LOST_DEPTH_TEST_LESS:
+						item_current = 1;
+						break;
+					case LOST_DEPTH_TEST_EQUAL:
+						item_current = 2;
+						break;
+					case LOST_DEPTH_TEST_LEQUAL:
+						item_current = 3;
+						break;
+					case LOST_DEPTH_TEST_GREATER:
+						item_current = 4;
+						break;
+					case LOST_DEPTH_TEST_NOTEQUAL:
+						item_current = 5;
+						break;
+					case LOST_DEPTH_TEST_GEQUAL:
+						item_current = 6;
+						break;
+					case LOST_DEPTH_TEST_ALWAYS:
+						item_current = 7;
+						break;
+					default:
+						break;
+					}
+					int item_old = item_current;
+					const char* items[] = { "Never", "Less than", "Equal", "Less than or equal", "Greater than", "Not equal", "Greater than or equal", "Always" };
+					unsigned int enumVals[] = {
+						LOST_DEPTH_TEST_NEVER,
+						LOST_DEPTH_TEST_LESS,
+						LOST_DEPTH_TEST_EQUAL,
+						LOST_DEPTH_TEST_LEQUAL,
+						LOST_DEPTH_TEST_GREATER,
+						LOST_DEPTH_TEST_NOTEQUAL,
+						LOST_DEPTH_TEST_GEQUAL,
+						LOST_DEPTH_TEST_ALWAYS
+					};
+					ImGui::Combo("##Depth Test Func", &item_current, items, IM_ARRAYSIZE(items), 4);
+
+					if (item_old != item_current)
+						it->second.data->setDepthTestFunc(enumVals[item_current]);
+
+					ImGui::SameLine();
+					ImGui::TextDisabled("(?)");
+					switch (it->second.data->getDepthTestFunc())
+					{
+					case LOST_DEPTH_TEST_LEQUAL:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is less than or equal to the depth buffer");
+						break;
+					case LOST_DEPTH_TEST_LESS:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is less than the depth buffer");
+						break;
+					case LOST_DEPTH_TEST_GEQUAL:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is greater than or equal to the depth buffer");
+						break;
+					case LOST_DEPTH_TEST_GREATER:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is greater than the depth buffer");
+						break;
+					case LOST_DEPTH_TEST_NEVER:
+						ImGui::SetItemTooltip("Never renders the pixel");
+						break;
+					case LOST_DEPTH_TEST_ALWAYS:
+						// [!] TODO: Figure out if this batching toggle should instead be tied to the ZSort setting in the material
+						ImGui::SetItemTooltip("Always renders the pixel, disables batching to preserve order");
+						break;
+					case LOST_DEPTH_TEST_AUTO:
+						ImGui::SetItemTooltip("Should not be set in a material, this is reserved for the renderer");
+						break;
+					case LOST_DEPTH_TEST_EQUAL:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is equal to the depth buffer");
+						break;
+					case LOST_DEPTH_TEST_NOTEQUAL:
+						ImGui::SetItemTooltip("Only renders the pixel if the depth is not equal to the depth buffer");
+						break;
+					default:
+						ImGui::SetItemTooltip("The depth test function value is unknown");
+						break;
+					}
 				}
+#pragma endregion
 
 				// Depth test enabled?
 				ImGui::Text("Depth Write:");
+#pragma region DepthWrite
 				ImGui::SameLine();
-				if (it->second.data->getDepthWrite())
+
+				// Toggle box for depth write
+				bool depthWrite = it->second.data->getDepthWrite();
+				ImGui::Checkbox("##depthWrite", &depthWrite);
+				if (depthWrite != it->second.data->getDepthWrite())
+					it->second.data->setDepthWrite(depthWrite);
+				ImGui::SameLine();
+
+				if (depthWrite)
 				{
 					ImGui::TextColored(ImColor(135, 191, 255, 255), "Enabled");
 					ImGui::SetItemTooltip("This material will write to the depth buffer");
@@ -888,35 +1194,69 @@ namespace lost
 					ImGui::TextColored(ImColor(80, 107, 138, 255), "Disabled");
 					ImGui::SetItemTooltip("This material will not write to the depth buffer");
 				}
+#pragma endregion
 
 				// Queue level
 				ImGui::Text("Queue Level:");
 				ImGui::SameLine();
-				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", it->second.data->getQueueLevel());
+
+				int queueLevel = it->second.data->getQueueLevel();
+				ImGui::DragInt("##queueSet", &queueLevel);
+				if (it->second.data->getQueueLevel() != queueLevel)
+					it->second.data->setQueueLevel(queueLevel);
 
 				// ZSort Mode
 				// [!] TODO: Add ZSort modes
 				ImGui::Text("ZSort Mode:");
+#pragma region ZSort
 				ImGui::SameLine();
-				switch (it->second.data->getZSortMode())
 				{
-				case LOST_ZSORT_NORMAL:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Normal (Instanced Batching)");
-					ImGui::SetItemTooltip("Sorts into the most optimal order when rendering\nDoes not preserve the order things are rendered or allow for transparency");
-					break;
-				case LOST_ZSORT_DEPTH:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Depth");
-					ImGui::SetItemTooltip("Sorts by depth, this allows for transparency but is less optimal");
-					break;
-				case LOST_ZSORT_NONE:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "None");
-					ImGui::SetItemTooltip("Doesn't sort at all, preserving the order things are rendered");
-					break;
-				default:
-					ImGui::TextColored(ImColor(135, 191, 255, 255), "Unknown");
-					ImGui::SetItemTooltip("Unknown ZSort mode");
-					break;
+					int item_current = 1;
+					switch (it->second.data->getZSortMode())
+					{
+					case LOST_ZSORT_NORMAL:
+						item_current = 0;
+						break;
+					case LOST_ZSORT_DEPTH:
+						item_current = 1;
+						break;
+					case LOST_ZSORT_NONE:
+						item_current = 2;
+						break;
+					default:
+						break;
+					}
+					int item_old = item_current;
+					const char* items[] = { "Normal", "Depth", "None" };
+					unsigned int enumVals[] = {
+						LOST_ZSORT_NORMAL,
+						LOST_ZSORT_DEPTH,
+						LOST_ZSORT_NONE
+					};
+					ImGui::Combo("##ZSort Func", &item_current, items, IM_ARRAYSIZE(items), 4);
+
+					if (item_old != item_current)
+						it->second.data->setZSortMode(enumVals[item_current]);
+
+					ImGui::SameLine();
+					ImGui::TextDisabled("(?)");
+					switch (it->second.data->getZSortMode())
+					{
+					case LOST_ZSORT_NORMAL:
+						ImGui::SetItemTooltip("Sorts into the most optimal order when rendering\nDoes not preserve the order things are rendered or allow for transparency");
+						break;
+					case LOST_ZSORT_DEPTH:
+						ImGui::SetItemTooltip("Sorts by depth, this allows for transparency but is less optimal");
+						break;
+					case LOST_ZSORT_NONE:
+						ImGui::SetItemTooltip("Doesn't sort at all, preserving the order things are rendered");
+						break;
+					default:
+						ImGui::SetItemTooltip("Unknown ZSort mode");
+						break;
+					}
 				}
+#pragma endregion
 
 			}
 			ImGui::EndCollapsingHeaderEx(isOpen);
@@ -924,10 +1264,413 @@ namespace lost
 
 	}
 
+	void _imGuiDisplayMeshAssetList()
+	{
+		const std::map<std::string, DataCount<Mesh>>& dataMap = _meshRM->getDataMap();
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Meshes Loaded...");
+			return;
+		}
+
+		for (typename std::map<std::string, DataCount<Mesh>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
+		{
+			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				CompiledMeshData* mesh = (CompiledMeshData*)(it->second.data);
+
+				// [!] TODO: Refactor meshes, they need to have their own VBO or
+				// [!]       a shared VBO that is spread across every loaded mesh
+				// [!]       storing an index for where to find the mesh in the
+				// [!]       list, this makes unloading meshes hard but saves on
+				// [!]       data transfers and API Calls
+
+				ImGui::SeparatorText("Mesh Info");
+				ImGui::Text("Verticies:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", mesh->indexData.size());
+
+				ImGui::Text("Render Mode:");
+				ImGui::SameLine();
+				switch (mesh->meshRenderMode)
+				{
+				case LOST_MESH_POINTS:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Points");
+					ImGui::SetItemTooltip("Renders each vertex as a point\n[a], [b], [c] = o  o  o");
+					break;
+				case LOST_MESH_LINES:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Lines");
+					ImGui::SetItemTooltip("Renders every pair of verticies as a seperate line\n[a, b], [c, d] = o--o  o--o");
+					break;
+				case LOST_MESH_LINE_LOOP:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Line loop");
+					ImGui::SetItemTooltip("Renders every pair of verticies as a seperate line but joins the first and last verticies given\n[a, b], [c, d] then (d, a) is added by the renderer");
+					break;
+				case LOST_MESH_LINE_STRIP:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Line strip");
+					ImGui::SetItemTooltip("Renders a line of verticies connecting each one given with no seperation, excluding the first and last vertex\n[a, b, c, d] = o--o--o--o");
+					break;
+				case LOST_MESH_TRIANGLES:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Triangles");
+					ImGui::SetItemTooltip("Renders a triangle for every three verticies given, this has seperation\n[a, b, c], [d, e, f]");
+					break;
+				case LOST_MESH_TRIANGLE_STRIP:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Triangle strip");
+					ImGui::SetItemTooltip("Renders a strip of triangles, the first three given form a triangle, then any further vertex added creates a new triangle using the last two as it's base\nEg. Given the vertex list A, B, C, D, E, these triangles would be formed: [A, B, C], [B, C, D], [C, D, E]");
+					break;
+				case LOST_MESH_TRIANGLE_FAN:
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "Triangle fan");
+					ImGui::SetItemTooltip("Renders a strip of triangles, the first three given form a triangle, then any further vertex added creates a new triangle using the first vertex given and the last vertex given as it's base\nEg. Given the vertex list A, B, C, D, E, these triangles would be formed: [A, B, C], [A, C, D], [A, D, E]\nThey all share A, the first vertex given, but they use the last vertex given as the second vertex");
+					break;
+				default:
+					break;
+				}
+
+				
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+	}
+
+	void _imGuiDisplayShaderAssetList()
+	{
+		const std::map<std::string, DataCount<Shader>>& dataMap = _shaderRM->getDataMap();
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Shaders Loaded...");
+			return;
+		}
+
+		for (typename std::map<std::string, DataCount<Shader>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
+		{
+			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				ImGui::SeparatorText("Shader Info");
+
+				ImGui::Text("Name:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), it->first.c_str());
+
+				// Get the file location text, if it's nullptr returning it with in-build
+				const char* vertDir = it->second.data->getVertexDir();
+				vertDir = vertDir == nullptr ? "In-built" : vertDir;
+				const char* fragDir = it->second.data->getFragmentDir();
+				fragDir = fragDir == nullptr ? "In-built" : fragDir;
+
+				const char* vertSource = it->second.data->getVertexSource();
+				vertSource = vertSource == nullptr ? "Unknown source..." : vertSource;
+				const char* fragSource = it->second.data->getFragmentSource();
+				fragSource = fragSource == nullptr ? "Unknown source..." : fragSource;
+
+				ImGui::Text("Vertex Shader:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), vertDir);
+				ImGui::Text("Fragment Shader:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), fragDir);
+
+				if (ImGui::Button("Reload Shader", { ImGui::GetContentRegionAvail().x, 0 }))
+					it->second.data->reloadShader();
+
+				ImGui::SeparatorText("Texture Slots");
+				// Loop over texture slots in shader
+				const std::map<std::string, unsigned int>& textureSlots = it->second.data->getTextureNameMap();
+				for (typename std::map<std::string, unsigned int>::const_iterator texIt = textureSlots.begin(); texIt != textureSlots.end(); texIt++)
+				{
+					ImGui::Bullet();
+					ImGui::Text("Slot:");
+					ImGui::SameLine();
+					ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", texIt->second);
+					ImGui::SameLine();
+					ImGui::TextColored(ImColor(135, 191, 255, 255), texIt->first.c_str());
+				}
+
+				ImGui::SeparatorText("Uniforms");
+				// Loop over uniforms in shader
+				const std::map<std::string, lost::_Shader::UniformData>& uniforms = it->second.data->getUniformNameMap();
+
+				std::vector<const char*> nameList;
+				std::vector<const lost::_Shader::UniformData*> uniformList;
+				nameList.reserve(uniforms.size());
+				uniformList.reserve(uniforms.size());
+
+				if (!uniforms.empty())
+				{
+					for (typename std::map<std::string, lost::_Shader::UniformData>::const_iterator uniformIt = uniforms.begin(); uniformIt != uniforms.end(); uniformIt++)
+					{
+						const lost::_Shader::UniformData& uniform = uniformIt->second;
+
+						bool isOpen = false;
+						if (uniformIt->second.location == -1)
+						{
+							ImGui::BeginDisabled();
+							isOpen = ImGui::BeginCollapsingHeaderEx(uniformIt->first.c_str(), ("[x] " + uniformIt->first).c_str());
+						}
+						else
+						{
+							isOpen = ImGui::BeginCollapsingHeaderEx(uniformIt->first.c_str(), (uniformIt->first + (uniform.isArray ? "[]" : "")).c_str(), nullptr);
+							nameList.push_back(uniformIt->first.c_str());
+							uniformList.push_back(&uniform);
+						}
+
+						if (isOpen)
+						{
+							ImGui::Bullet();
+							ImGui::Text("Name:");
+							ImGui::SameLine();
+							ImGui::TextColored(ImColor(135, 191, 255, 255), uniformIt->first.c_str());
+
+							ImGui::Bullet();
+							ImGui::Text("Type:");
+							ImGui::SameLine();
+							ImGui::TextColored(ImColor(135, 191, 255, 255), lost::_UniformIDName[uniform.type].c_str());
+							if (uniform.isArray)
+							{
+								ImGui::SameLine();
+								ImGui::TextColored(ImColor(135, 191, 255, 255), "[Array]");
+							}
+
+							ImGui::Bullet();
+							ImGui::Text("Location:");
+							ImGui::SameLine();
+							ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", uniform.location);
+						}
+						ImGui::EndCollapsingHeaderEx(isOpen);
+
+						if (uniformIt->second.location == -1)
+						{
+							ImGui::EndDisabled();
+							ImGui::SetItemTooltip("This uniform wasn't found in the compiled shader\nEither it got optimized out or there was an issue in the compilation");
+						}
+					}
+
+					// Set uniform value menu
+					ImGui::SeparatorText("Set Uniform Value (?)");
+					ImGui::SetItemTooltip("Only use this on values that aren't set on code\nThere is no issue with doing this, but the value you put in will most like be overriden immediately and will have no effect");
+
+					// Store the selected value on the uniformSelectors map so it persists
+					// One is created per shader
+					if (!uniformList.empty())
+					{
+						int* currentItem = nullptr;
+						UniformSelection* selection = nullptr;
+
+						if (uniformSelectors.count(it->first) > 0)
+						{
+							currentItem = &(uniformSelectors[it->first].selectedUniformIndex);
+							selection = &uniformSelectors[it->first];
+						}
+						else
+						{
+							uniformSelectors[it->first] = UniformSelection{};
+							currentItem = &(uniformSelectors[it->first].selectedUniformIndex);
+
+							selection = &uniformSelectors[it->first];
+							selection->selectedUniformIndex = 0;
+						}
+
+						if (*currentItem >= uniformList.size())
+							*currentItem = 0;
+
+						// Selector
+						bool changedUniform = ImGui::Combo("##setUniformVal", currentItem, nameList.data(), nameList.size());
+						bool queryShader = changedUniform;
+
+						ImGui::SameLine();
+						ImGui::Text("Type:");
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(135, 191, 255, 255), lost::_UniformIDName[(*uniformList.at(*currentItem)).type].c_str());
+
+						if ((*uniformList.at(*currentItem)).isArray)
+						{
+							// Adding onto the type line
+							ImGui::SameLine();
+							ImGui::TextColored(ImColor(135, 191, 255, 255), "[Array]");
+
+							queryShader = queryShader || ImGui::DragInt("Index", (int*)&selection->offset, 0.05, 0, GL_MAX_UNIFORM_LOCATIONS);
+							ImGui::SameLine();
+							ImGui::TextDisabled("(?)");
+							ImGui::SetItemTooltip("Note: this value is not clamped and may check data that is out of bounds from the array\nAccidentally checking out of bounds does not cause any issues");
+						}
+
+						if (queryShader)
+						{
+							switch ((*uniformList.at(*currentItem)).type)
+							{
+							case LOST_FLOAT:
+							case LOST_VEC2:
+							case LOST_VEC3:
+							case LOST_VEC4:
+								glGetUniformfv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->fv);
+								break;
+							case LOST_INT:
+							case LOST_IVEC2:
+							case LOST_IVEC3:
+							case LOST_IVEC4:
+								glGetUniformiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->iv);
+								break;
+							case LOST_UINT:
+							case LOST_UVEC2:
+							case LOST_UVEC3:
+							case LOST_UVEC4:
+								glGetUniformuiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->uiv);
+								break;
+							//case LOST_DOUBLE:
+							//case LOST_DVEC2:
+							//case LOST_DVEC3:
+							//case LOST_DVEC4:
+							//	glGetUniformdv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location, selection->dv);
+							//	break;
+							case LOST_BOOL:
+							case LOST_BVEC2:
+							case LOST_BVEC3:
+							case LOST_BVEC4:
+								glGetUniformiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, (int*)selection->bv);
+								break;
+							default:
+								break;
+							}
+						}
+
+						bool change = false;
+
+						switch ((*uniformList.at(*currentItem)).type)
+						{
+						case LOST_FLOAT:
+							change = ImGui::DragFloat("##set", selection->fv, 0.1f);
+							break;
+						case LOST_VEC2:
+							change = ImGui::DragFloat2("##set", selection->fv, 0.1f);
+							break;
+						case LOST_VEC3:
+							change = ImGui::DragFloat3("##set", selection->fv, 0.1f);
+							break;
+						case LOST_VEC4:
+							change = ImGui::DragFloat4("##set", selection->fv, 0.1f);
+							break;
+						case LOST_INT:
+							change = ImGui::DragInt("##set", selection->iv);
+							break;
+						case LOST_IVEC2:
+							change = ImGui::DragInt2("##set", selection->iv);
+							break;
+						case LOST_IVEC3:
+							change = ImGui::DragInt3("##set", selection->iv);
+							break;
+						case LOST_IVEC4:
+							change = ImGui::DragInt4("##set", selection->iv);
+							break;
+						case LOST_UINT:
+							change = ImGui::DragInt("##set", (int*)(selection->uiv), 1.0f, 0);
+							break;
+						case LOST_UVEC2:
+							change = ImGui::DragInt2("##set", (int*)(selection->uiv), 1.0f, 0);
+							break;
+						case LOST_UVEC3:
+							change = ImGui::DragInt3("##set", (int*)(selection->uiv), 1.0f, 0);
+							break;
+						case LOST_UVEC4:
+							change = ImGui::DragInt4("##set", (int*)(selection->uiv), 1.0f, 0);
+							break;
+						//case LOST_DOUBLE:
+						//	change = ImGui::DragFloat("##set", selection->fv, 0.1f);
+						//	break;
+						//case LOST_DVEC2:
+						//	change = ImGui::DragFloat2("##set", selection->fv, 0.1f);
+						//	break;
+						//case LOST_DVEC3:
+						//	change = ImGui::DragFloat3("##set", selection->fv, 0.1f);
+						//	break;
+						//case LOST_DVEC4:
+						//	change = ImGui::DragFloat4("##set", selection->fv, 0.1f);
+						//	break;
+						case LOST_BOOL:
+							change = ImGui::Checkbox("##setA", selection->bv);
+							break;
+						case LOST_BVEC2:
+							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool));
+							break;
+						case LOST_BVEC3:
+							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setC", selection->bv + 2 * sizeof(float) / sizeof(bool));
+							break;
+						case LOST_BVEC4:
+							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setC", selection->bv + 2 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
+							change = change || ImGui::Checkbox("##setD", selection->bv + 3 * sizeof(float) / sizeof(bool));
+							break;
+						default:
+							ImGui::TextDisabled("Unable to set this value");
+							break;
+						}
+
+						ImGui::SameLine();
+						ImGui::BeginDisabled(selection->liveSet);
+						if (ImGui::Button("Set!"))
+						{
+							it->second.data->setUniform((void*)(selection->fv), (*uniformList.at(*currentItem)).location, (*uniformList.at(*currentItem)).type, 1, selection->offset);
+						}
+						ImGui::EndDisabled();
+
+						ImGui::SameLine();
+						if (changedUniform) // If the uniform was changed turn off live set so that it doesn't override any values
+						{
+							selection->liveSet = false;
+							selection->offset = 0;
+						}
+						ImGui::Checkbox("Live Set", &selection->liveSet);
+						ImGui::SameLine();
+						ImGui::TextDisabled("(?)");
+						ImGui::SetItemTooltip("Sets the uniform as the setting changes, this setting turns off if you change the selected uniform");
+						if (change && selection->liveSet)
+						{
+							it->second.data->setUniform((void*)(selection->fv), (*uniformList.at(*currentItem)).location, (*uniformList.at(*currentItem)).type, 1, selection->offset);
+						}
+					}
+					else
+					{
+						ImGui::TextDisabled("No active uniforms in compiled shader");
+					}
+				}
+				else
+				{
+					ImGui::TextDisabled("No uniforms were found");
+				}
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+	}
+
+	void _imGuiDisplayFontAssetList()
+	{
+		const std::map<std::string, DataCount<Font>>& dataMap = _fontRM->getDataMap();
+
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Fonts Loaded...");
+			return;
+		}
+
+		for (typename std::map<std::string, DataCount<Font>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
+		{
+			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				ImGui::SeparatorText("Font Info");
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+	}
+
 	void imGuiDisplayProgramInfo()
 	{
 		ImGuiWindowFlags flags = 0;
-		ImGui::Begin("Lost Info", nullptr, flags);
+		ImGui::Begin("Lost Info");
 
 		// Make a tab bar
 		ImGui::BeginTabBar("Tabs");
@@ -973,18 +1716,19 @@ namespace lost
 			ImGui::Text("Available Output Passes:");
 			for (int i = 0; i < state.currentBuffers.size(); i++)
 			{
-				if (ImGui::TreeNode(state.currentBuffers[i].name.c_str()))
+				bool isOpen = ImGui::BeginCollapsingHeaderEx(state.currentBuffers[i].name.c_str(), state.currentBuffers[i].name.c_str());
+				if (isOpen)
 				{
 					ImGui::BulletText("Location: %i", i);
 					ImGui::BulletText("Format: %s", lost::formatToName(state.currentBuffers[i].format));
 					ImGui::BulletText("Clear Color:");
 					ImGui::SameLine();
 					ImVec4 clearColor = ImVec4(state.currentBuffers[i].defaultColor.x, state.currentBuffers[i].defaultColor.y, state.currentBuffers[i].defaultColor.z, state.currentBuffers[i].defaultColor.w);
-					ImGui::ColorButton("##ColorPicker", clearColor);
+					ImGui::ColorEdit4("##ColorPicker", &clearColor.x);
 					if (clearColor.x != state.currentBuffers[i].defaultColor.x || clearColor.y != state.currentBuffers[i].defaultColor.y || clearColor.z != state.currentBuffers[i].defaultColor.z || clearColor.w != state.currentBuffers[i].defaultColor.w)
-						int xfads = 0; // [!] TODO Set clear color
-					ImGui::TreePop();
+						lost::setClearColor(i, { clearColor.x, clearColor.y, clearColor.z, clearColor.w });
 				}
+				ImGui::EndCollapsingHeaderEx(isOpen);
 			}
 
 			const std::vector<Window>& windows = lost::getWindows();
@@ -995,7 +1739,10 @@ namespace lost
 			{
 				Window window = windows[i];
 				ImGui::PushID(i);
-				if (ImGui::TreeNode("windowTab", "Window %i", i))
+
+				bool isOpen = ImGui::BeginCollapsingHeaderEx("windowTab", (std::string("Window ") + std::to_string(i)).c_str());
+
+				if (isOpen)
 				{
 					if (i == 0)
 						ImGui::TextDisabled("ImGui is bound to this one!");
@@ -1036,9 +1783,9 @@ namespace lost
 						if (ImGui::Button("Fullscreen Window", { 300, 0 }))
 							lost::makeWindowFullscreen(true, window);
 					}
-
-					ImGui::TreePop();
 				}
+
+				ImGui::EndCollapsingHeaderEx(isOpen);
 				ImGui::PopID();
 			}
 
@@ -1047,8 +1794,6 @@ namespace lost
 
 		if (ImGui::BeginTabItem("Assets"))
 		{
-			// [!] TODO: make assets list and viewer
-
 			ImGui::SeparatorText("Textures");
 			ImGui::Text("Currently loaded %i textures...", _textureRM->getValueCount());
 
@@ -1068,23 +1813,21 @@ namespace lost
 			ImGui::Text("Currently loaded %i meshes...", _meshRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("meshAssetList", "View Meshes");
 			if (isOpen)
-			{
-				ImGui::Text("This is currently an unfinished section, please ignore for now <3");
-			}
+				_imGuiDisplayMeshAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Shaders");
 			ImGui::Text("Currently loaded %i shaders...", _shaderRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("shaderAssetList", "View Shaders");
 			if (isOpen)
-				ImGui::Text("This is currently an unfinished section, please ignore for now <3");
+				_imGuiDisplayShaderAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Fonts");
 			ImGui::Text("Currently loaded %i fonts...", _fontRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("fontAssetList", "View Fonts");
 			if (isOpen)
-				ImGui::Text("This is currently an unfinished section, please ignore for now <3");
+				_imGuiDisplayFontAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::EndTabItem();

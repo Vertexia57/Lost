@@ -132,6 +132,12 @@ namespace lost
 		_state.normalizedFillColor = _state.fillColor.normalized();
 	}
 
+	void setClearColor(unsigned int id, Color color)
+	{
+		_state.currentBuffers[id].defaultColor = {color.r, color.g, color.b, color.a};
+		setPassClearColor(id, color);
+	}
+
 	const Color& getFillColor()
 	{
 		return _state.fillColor;

@@ -13,12 +13,17 @@ out vec4 fragColor;
 out vec3 fragNormal;
 out vec3 fragWorldNormal;
 
+out mat4 fragModel;
+out mat3 TBN;
+
 void main() {
     gl_Position = mvp * vec4(vertPos, 1.0);
 
-    fragPos = vertPos;
+    fragPos = (model * vec4(vertPos, 1.0)).xyz;
     fragColor = vertColor;
     fragTexCoord = vertTexCoord;
     fragNormal = vertNormal;
 	fragWorldNormal = normalize(mat3(model) * vertNormal);
+
+    fragModel = model;
 }

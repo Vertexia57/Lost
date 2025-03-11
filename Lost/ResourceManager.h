@@ -2,6 +2,8 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "State.h"
+#include "Log.h"
 
 namespace lost
 {
@@ -17,7 +19,7 @@ namespace lost
 	class ResourceManager
 	{
 	public:
-		ResourceManager();
+		ResourceManager(const char* _typeName = "");
 		~ResourceManager();
 
 		void addValue(T value, const char* id);
@@ -41,10 +43,12 @@ namespace lost
 		inline const std::map<std::string, DataCount<T>>& getDataMap() const { return m_Data; };
 	private:
 		std::map<std::string, DataCount<T>> m_Data;
+		const char* m_TypeName;
 	};
 
 	template<typename T>
-	inline ResourceManager<T>::ResourceManager()
+	inline ResourceManager<T>::ResourceManager(const char* _typeName)
+		: m_TypeName(_typeName)
 	{
 	}
 
@@ -53,6 +57,8 @@ namespace lost
 	{
 		for (typename std::map<std::string, DataCount<T>>::iterator it = m_Data.begin(); it != m_Data.end(); it++)
 			delete it->second.data;
+
+		debugLog("Successfully destroyed/unloaded all remaining (" + std::to_string(m_Data.size()) + ") " + std::string(m_TypeName), LOST_LOG_SUCCESS);
 		m_Data.clear();
 	}
 
@@ -66,6 +72,13 @@ namespace lost
 	template<typename T>
 	inline T ResourceManager<T>::getValue(const char* id) const
 	{
+#ifdef LOST_DEBUG_MODE
+		if (m_Data.count(id) == 0) // Check if key exists
+		{
+			log("Tried to get a value from a resource manager that didn't exist (" + std::string(id) + ")", LOST_LOG_WARNING);
+			return nullptr;
+		}
+#endif
 		return m_Data.at(id).data;
 	}
 

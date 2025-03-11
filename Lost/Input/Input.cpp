@@ -3,6 +3,8 @@
 #include "../Log.h"
 #include "../GL/LostGL.h"
 
+#include <iostream>
+
 #include <array>
 
 namespace lost

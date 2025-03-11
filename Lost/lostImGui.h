@@ -21,9 +21,10 @@ namespace ImGui
 
 	// Extra ImGui functions
 
-	static bool renderFrameContent(const char* title, bool* value);
+	static bool renderFrameContent(const char* title, bool* value, void(*insert)() = nullptr);
 	bool BeginChildEx(const char* id, float sizeX, float paddingX, float paddingY);
 	void EndChildEx();
 	bool BeginCollapsingHeaderEx(const char* id, const char* title, bool* isOpen = nullptr, float sizeX = 0.0f, float paddingX = 0.0f, float paddingY = 0.0f);
+	bool BeginCollapsingHeaderWithInsert(const char* id, const char* title, void(*titleInsert)(), bool* isOpen = nullptr, float sizeX = 0.0f, float paddingX = 0.0f, float paddingY = 0.0f);
 	void EndCollapsingHeaderEx(bool isOpen);
 }

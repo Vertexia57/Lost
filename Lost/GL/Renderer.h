@@ -93,6 +93,9 @@ namespace lost
 	// Fills the current window with the color given
 	void fillWindow(Color color);
 
+	// Sets the clear color of the given render buffer, this effects all windows
+	void setPassClearColor(unsigned int passID, Color color);
+
 	// Depending on the current render mode of the renderer, renders the mesh given to the screen
 	void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform);
 	// Depending on the current render mode of the renderer, renders the mesh given to the screen using the position and scale given
@@ -140,8 +143,7 @@ namespace lost
 	/// <param name="position">The 3D local position of the mesh</param>
 	/// <param name="vertexColor">The color of the vertex, from 0 - 255</param>
 	/// <param name="textureCoord">The texture coordinate or UV of the vertex</param>
-	/// <param name="vertexNormal">The normal of the vertex, by default (0, 0, 1)</param>
-	void addVertex(Vec3 position, Color vertexColor = { 255, 255, 255, 255 }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f });
+	void addVertex(Vec3 position, Color vertexColor = { 255, 255, 255, 255 }, Vec2 textureCoord = { 0.0f, 0.0f });
 	// Adds a vertex to the mesh being created, must be ran after beginMesh()
 	void addVertex(Vertex& vertex);
 
@@ -211,6 +213,8 @@ namespace lost
 #endif
 
 		void fillWindow(Color color);
+
+		void setPassClearColor(unsigned int passID, Color color);
 
 		// Mesh Building
 

@@ -13,8 +13,10 @@ int main()
 
 	lost::setupImGui();
 
-	lost::Shader shader = lost::loadShader("data/vertex.vert", "data/fragment.frag", "phongLighting");
-	lost::Font font = lost::loadFont("data/PixeloidSans.ttf", 64.0f, "pixelFont");
+	lost::Shader shader = lost::loadShader(nullptr, "data/fragment.frag", "phongShader");
+
+	lost::Mesh mesh = lost::loadMesh("data/cubeUV.obj");
+	lost::Material mat = lost::makeMaterial({ lost::loadTexture("data/BrickAlbedo.png"), lost::_getDefaultWhiteTexture(), lost::loadTexture("data/BrickNormal.png")}, "WhiteMat", shader);
 
 	glm::vec3 cameraPosition = { 0.0f, 0.0f, 0.0f };
 	float camYaw = 0.0f;
@@ -22,9 +24,7 @@ int main()
 	float cameraSpeed = 0.1f;
 	bool cameraActive = true;
 
-	lost::Mesh nardoMesh = lost::loadMesh("data/Nardo.obj");
-	lost::Material matTest = lost::makeMaterial({ lost::loadTexture("data/emy.png") }, "emy", shader);
-	std::vector<lost::Material> nardoMaterials = lost::loadMaterialsFromOBJMTL("data/Nardo.obj");
+	float uptime = 0.0f;
 
 	while (lost::windowOpen())
 	{
@@ -34,18 +34,22 @@ int main()
 		// [--------------]
 
 		lost::beginFrame();
-		lost::fillWindow({ 0, 0, 0, 255 });
 
-		if (lost::getKeyTapped(LOST_KEY_LEFT_CONTROL))
+		uptime += lost::getDeltaTime() / 1000.0f;
+
+		if (lost::getKeyTapped(LOST_KEY_C))
 		{
 			cameraActive = !cameraActive;
 			lost::setMousePosition(lost::getWidth() / 2.0f, lost::getHeight() / 2.0f);
 		}
 
+		if (lost::getKeyTapped(LOST_KEY_R))
+			cameraPosition = { 0.0f, 0.0f, 0.0f };
+
 		float mouseOffsetX = lost::getMouseX() - lost::getWidth() / 2.0f;
 		float mouseOffsetY = lost::getMouseY() - lost::getHeight() / 2.0f;
 
-		mouseOffsetX = (abs(mouseOffsetX) > 1.0f) ? mouseOffsetX : 0.0f;
+		mouseOffsetX = (abs(mouseOffsetX) > 0.1f) ? mouseOffsetX : 0.0f;
 		mouseOffsetY = (abs(mouseOffsetY) > 1.0f) ? mouseOffsetY : 0.0f;
 
 		if (cameraActive)
@@ -80,24 +84,16 @@ int main()
 		lost::setCameraPosition(cameraPosition);
 		lost::cameraLookAtRelative(forwardVector);
 
-		lost::setCullMode(LOST_CULL_NONE);
-		lost::beginMesh();
-		lost::addVertex(lost::Vec3{ 0.0f, 0.0f, 0.0f });
-		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 0.0f });
-		lost::addVertex(lost::Vec3{ 1.0f, 1.0f, 0.0f });
-		lost::setFillColor(255, 0, 0);
-		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 1.0f });
-		lost::addVertex(lost::Vec3{ 0.0f, 0.0f, 0.0f });
-		lost::addVertex(lost::Vec3{ 1.0f, 0.0f, 0.0f });
-		lost::setFillColor(255, 255, 255);
-		lost::endMesh();
-		lost::setCullMode(LOST_CULL_AUTO);
+		lost::setUniform(shader, &cameraPosition.x, "cameraPosition");
 
-		lost::renderMesh(nardoMesh, nardoMaterials, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 00.0f });
+		lost::Vec3 lightPos = { 2 * sin(uptime), 2 * cos(uptime), 0.0f };
+		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 0);
+		lightPos = { 0.0f, 2 * sin(uptime), 2 * cos(uptime) };
+		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 1);
+		lightPos = { 2 * cos(uptime), 2 * sin(uptime), 2 * sin(uptime) };
+		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 2);
 
-		//lost::setFillColor(255, 0, 255, 255);
-		//lost::renderRect(nardoMaterials[0], { 100.0f, 100.0f, 300.0f, 300.0f });
-
+		lost::renderMesh(mesh, { mat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();

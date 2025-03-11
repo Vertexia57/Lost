@@ -63,11 +63,11 @@ namespace lost
 
 	void _initRMs()
 	{
-		_textureRM = new ResourceManager<Texture>();
-		_materialRM = new ResourceManager<Material>();
-		_shaderRM = new ResourceManager<Shader>();
-		_meshRM = new ResourceManager<Mesh>();
-		_fontRM = new ResourceManager<Font>();
+		_textureRM = new ResourceManager<Texture>("Textures");
+		_materialRM = new ResourceManager<Material>("Materials");
+		_shaderRM = new ResourceManager<Shader>("Shaders");
+		_meshRM = new ResourceManager<Mesh>("Meshes");
+		_fontRM = new ResourceManager<Font>("Fonts");
 	}
 
 	void _destroyRMs()
@@ -231,19 +231,14 @@ namespace lost
 				{
 					std::vector<Texture> textureList;
 
-					// Check if a diffuse image was given
-					if (diffuseImageLocation.empty())
-					{
-						// [!] TODO: this doesn't support colors, or specular
-						textureList = { lost::_getDefaultWhiteTexture() };
-					}
-					else
-					{
-						// Load the textures
-						textureList = { lost::loadTexture(diffuseImageLocation.c_str()) };
-					}
+					// Load the textures
+					textureList = { 
+						diffuseImageLocation.empty()  ? lost::_getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str()),
+					};
 
-					materialOutList.push_back(lost::makeMaterial(textureList, materialName.c_str()));
+					Material mat = lost::makeMaterial(textureList, materialName.c_str(), lost::_defaultShader);
+
+					materialOutList.push_back(mat);
 					mtlOrder.push_back(materialName);
 
 					diffuseImageLocation.clear();
@@ -252,11 +247,12 @@ namespace lost
 				materialName = tokens.at(1);
 			}
 
-			// Currently we can only support the map_Kd token for texturing
+			// Diffuse Texture
 			if (tokens.at(0) == "map_Kd")
 			{
 				// We need to manually get the second half as the tokenizer doesn't work with filenames with spaces
 				diffuseImageLocation = line.substr(7, line.size() - 7);
+				continue;
 			}
 		}
 
@@ -265,19 +261,14 @@ namespace lost
 		{
 			std::vector<Texture> textureList;
 
-			// Check if a diffuse image was given
-			if (diffuseImageLocation.empty())
-			{
-				// [!] TODO: this doesn't support colors, or specular
-				textureList = { lost::_getDefaultWhiteTexture() };
-			}
-			else
-			{
-				// Load the textures
-				textureList = { lost::loadTexture(diffuseImageLocation.c_str()) };
-			}
+			// Load the textures
+			textureList = {
+				diffuseImageLocation.empty()  ? lost::_getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str())
+			};
 
-			materialOutList.push_back(lost::makeMaterial(textureList, materialName.c_str()));
+			Material mat = lost::makeMaterial(textureList, materialName.c_str(), lost::_defaultShader);
+
+			materialOutList.push_back(mat);
 			mtlOrder.push_back(materialName);
 		}
 
@@ -387,6 +378,87 @@ namespace lost
 
 #pragma region Mesh
 
+	void _generateNormals(std::vector<Vertex>* verticies, const std::vector<unsigned int>& indices)
+	{
+		for (int i = 0; i < indices.size(); i += 3)
+		{
+			Vec3 p1 = (*verticies)[indices[i    ]].position;
+			Vec3 p2 = (*verticies)[indices[i + 1]].position;
+			Vec3 p3 = (*verticies)[indices[i + 2]].position;
+
+			Vec3 U = p2 - p1;
+			Vec3 V = p3 - p1;
+
+			// Triangle normal cross product of U and V
+			Vec3 normal = {
+				U.y * V.z - U.z * V.y,
+				U.z * V.x - U.x * V.z,
+				U.x * V.y - U.y * V.x
+			};
+			normal.normalize();
+
+			(*verticies)[indices[i    ]].vertexNormal += normal;
+			(*verticies)[indices[i + 1]].vertexNormal += normal;
+			(*verticies)[indices[i + 2]].vertexNormal += normal;
+		}
+
+		for (Vertex& v : *verticies)
+			v.vertexNormal.normalize();
+	}
+
+	void _generateTangents(std::vector<Vertex>* verticies, const std::vector<unsigned int>& indices)
+	{
+		size_t vertexCount = verticies->size();
+		std::vector<Vertex>& vertices = *verticies; // Spelled correctly
+
+		Vec3* tan1 = new Vec3[vertexCount * 2];
+		Vec3* tan2 = tan1 + vertexCount;
+		memset(tan1, 0, vertexCount * sizeof(Vec3) * 2);
+		unsigned int indexCount = (unsigned int)indices.size();
+		for (unsigned int a = 0; a < indexCount; a += 3) {
+			long i1 = indices[a];
+			long i2 = indices[a + 1];
+			long i3 = indices[a + 2];
+			const Vec3& v1 = vertices[i1].position;
+			const Vec3& v2 = vertices[i2].position;
+			const Vec3& v3 = vertices[i3].position;
+			const Vec2& w1 = vertices[i1].textureCoord;
+			const Vec2& w2 = vertices[i2].textureCoord;
+			const Vec2& w3 = vertices[i3].textureCoord;
+			float x1 = v2.x - v1.x;
+			float x2 = v3.x - v1.x;
+			float y1 = v2.y - v1.y;
+			float y2 = v3.y - v1.y;
+			float z1 = v2.z - v1.z;
+			float z2 = v3.z - v1.z;
+			float s1 = w2.x - w1.x;
+			float s2 = w3.x - w1.x;
+			float t1 = w2.y - w1.y;
+			float t2 = w3.y - w1.y;
+			float r = 1.0F / (s1 * t2 - s2 * t1);
+			Vec3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+			Vec3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+			tan1[i1] += sdir;
+			tan1[i2] += sdir;
+			tan1[i3] += sdir;
+			tan2[i1] += tdir;
+			tan2[i2] += tdir;
+			tan2[i3] += tdir;
+		}
+		for (unsigned int a = 0; a < vertexCount; a++) {
+			const Vec3& n = vertices[a].vertexNormal;
+			const Vec3& t = tan1[a];
+			const glm::vec3 nglm = n.getGLM();
+			const glm::vec3 tglm = t.getGLM();
+			const glm::vec3 tan2glm = tan2[a].getGLM();
+			// Gram-Schmidt orthogonalize
+			vertices[a].vertexTangent = Vec4((t - n * n.dot(t)).normalized(), 0.0f);
+			// Calculate handedness (direction of bitangent)
+			vertices[a].vertexTangent.w = (glm::dot(glm::cross(nglm, tglm), tan2glm)) < 0.0F ? 1.0F : -1.0F;
+		}
+		delete[] tan1;
+	}
+
 	const char* _getShaderID(Shader shader)
 	{
 		return _shaderRM->getIDByValue(shader);
@@ -424,11 +496,11 @@ namespace lost
 			mesh = new CompiledMeshData();
 
 			// This works only becausee the Vertex class is essentially just a list of floats, in order:
-			// Position, Texcoord, Color
+			// Position, Texcoord, Color, Normal, Tangent, Bitangent
 			for (Vertex& vertex : meshData.verticies)
 			{
 				for (int i = 0; i < sizeof(vertex.data) / sizeof(float); i++)
-					((CompiledMeshData*)mesh)->vectorData.push_back(vertex.data[i]);
+					((CompiledMeshData*)mesh)->vertexData.push_back(vertex.data[i]);
 			}
 			((CompiledMeshData*)mesh)->indexData.insert(((CompiledMeshData*)mesh)->indexData.end(), meshData.indexArray.begin(), meshData.indexArray.end());
 
@@ -522,105 +594,128 @@ namespace lost
 			}
 #endif
 
-			// All of these are done before the faces
-			if (tokens[0] == "v")
+			if (tokens.size() > 0)
 			{
-#ifdef LOST_DEBUG_MODE
-				if (tokens.size() < 4 || tokens.size() > 5)
+
+				// All of these are done before the faces
+				if (tokens[0] == "v")
 				{
-					debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" vertex with less than 3 or more than 4 floats", LOST_LOG_ERROR);
-					Vec4 vertex = { 0.0f, 0.0f, 0.0f, 0.0f };
+#ifdef LOST_DEBUG_MODE
+					if (tokens.size() < 4 || tokens.size() > 5)
+					{
+						debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" vertex with less than 3 or more than 4 floats", LOST_LOG_ERROR);
+						Vec4 vertex = { 0.0f, 0.0f, 0.0f, 0.0f };
+						vertexData.push_back(vertex);
+						continue;
+					}
+#endif
+					Vec4 vertex = { std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]), tokens.size() == 5 ? std::stof(tokens[4]) : 1.0f };
 					vertexData.push_back(vertex);
 					continue;
 				}
-#endif
-				Vec4 vertex = { std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]), tokens.size() == 5 ? std::stof(tokens[4]) : 1.0f };
-				vertexData.push_back(vertex);
-				continue;
-			}
 
-			if (tokens[0] == "vn")
-			{
-#ifdef LOST_DEBUG_MODE
-				if (tokens.size() != 4)
+				if (tokens[0] == "vn")
 				{
-					debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" normal with more or less than 3 floats", LOST_LOG_ERROR);
-					Vec3 normal = { 0.0f, 0.0f, 0.0f };
+#ifdef LOST_DEBUG_MODE
+					if (tokens.size() != 4)
+					{
+						debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" normal with more or less than 3 floats", LOST_LOG_ERROR);
+						Vec3 normal = { 0.0f, 0.0f, 0.0f };
+						normalData.push_back(normal);
+						continue;
+					}
+#endif
+					Vec3 normal = { std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]) };
 					normalData.push_back(normal);
 					continue;
 				}
-#endif
-				Vec3 normal = { std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]) };
-				normalData.push_back(normal);
-				continue;
-			}
 
-			if (tokens[0] == "vt")
-			{
-#ifdef LOST_DEBUG_MODE
-				if (tokens.size() < 2 || tokens.size() > 4)
+				if (tokens[0] == "vt")
 				{
-					debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" normal with less than 1 or more than 3 floats", LOST_LOG_ERROR);
-					Vec3 texture = { 0.0f, 0.0f, 0.0f };
+#ifdef LOST_DEBUG_MODE
+					if (tokens.size() < 2 || tokens.size() > 4)
+					{
+						debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" normal with less than 1 or more than 3 floats", LOST_LOG_ERROR);
+						Vec3 texture = { 0.0f, 0.0f, 0.0f };
+						textureData.push_back(texture);
+						continue;
+					}
+#endif
+					Vec3 texture = { std::stof(tokens[1]), tokens.size() >= 3 ? std::stof(tokens[2]) : 0.0f, tokens.size() >= 4 ? std::stof(tokens[3]) : 0.0f };
 					textureData.push_back(texture);
 					continue;
 				}
-#endif
-				Vec3 texture = { std::stof(tokens[1]), tokens.size() >= 3 ? std::stof(tokens[2]) : 0.0f, tokens.size() >= 4 ? std::stof(tokens[3]) : 0.0f };
-				textureData.push_back(texture);
-				continue;
-			}
 
-			// Faces, turn arbitrary data into verticies
-			if (tokens[0] == "f")
-			{
+				// Faces, turn arbitrary data into verticies
+				if (tokens[0] == "f")
+				{
 #ifdef LOST_DEBUG_MODE
-				if (tokens.size() != 4)
-				{
-					debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" face with less than or more than 3 verticies\nMake sure mesh is triangulated!", LOST_LOG_ERROR);
-					continue;
-				}
+					if (tokens.size() != 4)
+					{
+						debugLog(std::string("Malformed .obj file, \"") + objLoc + "\" face with less than or more than 3 verticies\nMake sure mesh is triangulated!", LOST_LOG_ERROR);
+						continue;
+					}
 #endif
 
-				for (int i = 1; i < tokens.size(); i++)
-				{
-					std::vector<std::string> subTokens = split(tokens[i], '/');
-
-					if (vertexIndexMap.count(tokens[i]) == 0)
+					// Create vertices and indices
+					for (int i = 1; i < tokens.size(); i++)
 					{
-						Vertex vert = {};
+						std::vector<std::string> subTokens = split(tokens[i], '/');
 
-						vert.position = vertexData[std::stoi(subTokens[0]) - 1].xyz;
-						vert.textureCoord = { textureData[std::stoi(subTokens[1]) - 1].x, 1.0f - textureData[std::stoi(subTokens[1]) - 1].y };
-						vert.vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-						vert.vertexNormal = normalData[std::stoi(subTokens[2]) - 1];
+						if (vertexIndexMap.count(tokens[i]) == 0)
+						{
+							Vertex vert = {};
 
-						vertexIndexMap[tokens[i]] = meshData.verticies.size();
-						meshData.verticies.push_back(vert);
+							vert.position = vertexData[std::stoi(subTokens[0]) - 1].xyz;
+							// Check if theres a texCoord included
+							if (subTokens.size() >= 2)
+								vert.textureCoord = { textureData[std::stoi(subTokens[1]) - 1].x, 1.0f - textureData[std::stoi(subTokens[1]) - 1].y };
+							else
+								vert.textureCoord = { 0.0f, 0.0f };
+							// Check if theres a normal included
+							if (subTokens.size() >= 3)
+								vert.vertexNormal = normalData[std::stoi(subTokens[2]) - 1];
+							else
+								vert.vertexNormal = { 0.0f, 0.0f, 0.0f }; 
+
+							vert.vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+							vertexIndexMap[tokens[i]] = meshData.verticies.size();
+							meshData.verticies.push_back(vert);
+						}
+
+						meshData.indexArray.push_back(vertexIndexMap[tokens[i]]);
 					}
 
-					meshData.indexArray.push_back(vertexIndexMap[tokens[i]]);
+					continue;
 				}
 
-				continue;
-			}
-
-			// Materials
-			if (tokens[0] == "usemtl")
-			{
-				meshData.materialSlotIndicies.push_back(meshData.indexArray.size());
+				// Materials
+				if (tokens[0] == "usemtl")
+				{
+					meshData.materialSlotIndicies.push_back(meshData.indexArray.size());
+				}
 			}
 		}
+
+		// Some objects don't have any usemtl lines and are just raw objects, we need to account for this
+		if (meshData.materialSlotIndicies.empty())
+			meshData.materialSlotIndicies.push_back(0);
+
+		if (normalData.empty())
+			_generateNormals(&meshData.verticies, meshData.indexArray);
+
+		_generateTangents(&meshData.verticies, meshData.indexArray);
 
 		// Compile mesh data into usable mesh data
 		CompiledMeshData* data = new CompiledMeshData();
 
 		// This works only because the Vertex class is essentially just a list of floats, in order:
-		// Position, Texcoord, Color
+		// Position, Texcoord, Color, Normal, Tangent, Bitangent
 		for (Vertex& vertex : meshData.verticies)
 		{
 			for (int i = 0; i < sizeof(vertex.data) / sizeof(float); i++)
-				data->vectorData.push_back(vertex.data[i]);
+				data->vertexData.push_back(vertex.data[i]);
 		}
 
 		data->indexData.insert(data->indexData.end(), meshData.indexArray.begin(), meshData.indexArray.end());

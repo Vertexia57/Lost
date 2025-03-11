@@ -51,26 +51,27 @@ namespace lost
 
 	struct CompiledMeshData
 	{
-		std::vector<float> vectorData;
+		std::vector<float> vertexData;
 		std::vector<unsigned int> materialSlotIndicies;
 		std::vector<unsigned int> indexData;
 		unsigned int meshRenderMode = LOST_MESH_TRIANGLES;
 	};
 
 	union Vertex {
+		float data[16];
 		struct
 		{
 			Vec3 position;
 			Vec2 textureCoord;
 			Vec4 vertexColor;
 			Vec3 vertexNormal;
+			Vec4 vertexTangent;
 		};
-		float data[12];
 	};
 
 	struct MeshData
 	{
-		// The verticies of the mesh, stored as { X, Y, Z, U, V, R, G, B }
+		// The verticies of the mesh, stored as { X, Y, Z, U, V, R, G, B, NX, NY, NZ, TX, TY, TZ, TW }
 		std::vector<Vertex> verticies; 
 
 		// The indicies which form the mesh using the render method given, by default LOST_MESH_TRIANGLES
@@ -82,7 +83,7 @@ namespace lost
 
 		// The method which the render will use to fill in the faces, by default LOST_MESH_TRIANGLES
 		// Follows the MeshRenderMethod enum
-		unsigned int meshFaceMethod = LOST_MESH_TRIANGLES; // [!] TODO: Make this actually do stuff in the renderer
+		unsigned int meshFaceMethod = LOST_MESH_TRIANGLES;
 	};
 
 }

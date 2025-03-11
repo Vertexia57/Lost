@@ -114,9 +114,12 @@ namespace lost
 	// Reverts the current Lost State to it's default settings
 	void setDefaultMode();
 
-	// Setrs the fill color used by the render when creating meshes
+	// Sets the fill color used by the render when creating meshes
 	// This does not effect renderMesh()
 	void setFillColor(float r, float g, float b, float a = 255.0f);
+
+	// Sets the clear color of the output texture where color is normalized
+	void setClearColor(unsigned int id, Color color);
 
 	// Returns the fill color currently set in the state machine
 	const Color& getFillColor();
