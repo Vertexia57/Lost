@@ -9,19 +9,27 @@ int main()
 	lost::init(LOST_RENDER_3D);
 
 	lost::Window A = lost::createWindow(500, 500);
-	lost::useVSync(true);
 	lost::Window B = lost::createWindow(500, 500);
+	lost::setWindowCloseCallback(A, &lost::closeAllWindows);
+	lost::setWindowCloseCallback(B, &lost::closeAllWindows);
 
 	lost::setupImGui();
 
 	lost::Shader shader = lost::loadShader(nullptr, "data/fragment.frag", "phongShader");
-	lost::Mesh mesh = lost::loadMesh("data/stanford-bunny.obj");
-	lost::Material mat = lost::makeMaterial(
-		{ 
+	lost::Mesh mesh = lost::loadMesh("data/cubeUV.obj");
+	lost::Material weird = lost::makeMaterial(
+		{
+			lost::makeTexture(lost::getRenderTexture(0, 1), "mainColor"),
 			lost::_getDefaultWhiteTexture(), 
-			lost::_getDefaultWhiteTexture(), 
-			lost::_getDefaultWhiteTexture() 
-		}, "rabbit", shader
+			lost::_getDefaultNormalTexture() 
+		}, "weird", shader
+	);
+	lost::Material cube = lost::makeMaterial(
+		{
+			lost::_getDefaultWhiteTexture(),
+			lost::_getDefaultWhiteTexture(),
+			lost::_getDefaultNormalTexture()
+		}, "cube", shader
 	);
 
 	// Nardo Material List
@@ -163,7 +171,7 @@ int main()
 		lightPos = { 2 * cos(uptime), 2 * sin(uptime), 2 * sin(uptime) };
 		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 2);
 
-		lost::renderMesh(mesh, { mat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+		lost::renderMesh(mesh, { weird }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();
@@ -172,10 +180,10 @@ int main()
 
 		lost::beginFrame(B);
 
-		lost::setCameraPosition({ 0.5f * sin(uptime), 0.5f * cos(uptime), 0.3f });
-		lost::cameraLookAt({ 0.0f, 0.0f, 0.1f });
+		lost::setCameraPosition({ 5.0f * sin(uptime), 5.0f * cos(uptime), 2.0f });
+		lost::cameraLookAt({ 0.0f, 0.0f, 0.0f });
 
-		lost::renderMesh(mesh, { mat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+		lost::renderMesh(mesh, { cube }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 		lost::endFrame();
 	}
 

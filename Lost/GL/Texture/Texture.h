@@ -15,6 +15,7 @@ namespace lost
 
 		void loadTexture(const char* dir);
 		void makeTexture(const char* data, int width, int height, unsigned int format);
+		void makeTexture(unsigned int openGLTexture, bool handleDelete = false);
 
 		// Binds the texture to the shader being used, by default using slot 0 "texture0"
 		void bind(int slot = 0) const;
@@ -34,6 +35,8 @@ namespace lost
 		_Material* m_TextureMaterial = nullptr;
 
 		std::string m_Directory = "No directory";
+
+		bool m_HandleDeletion = true;
 	};
 
 	// A reference to a texture

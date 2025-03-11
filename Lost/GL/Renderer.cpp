@@ -1154,6 +1154,12 @@ namespace lost
 		if (windowID == -1)
 			windowID = getCurrentWindowID();
 
+		if (windowID >= getWindows().size())
+		{
+			debugLog("Tried to get a render texture of a non-existant window", LOST_LOG_ERROR);
+			return 0;
+		}
+
 		return _renderer->getRenderTexture(windowID, pass);
 	}
 

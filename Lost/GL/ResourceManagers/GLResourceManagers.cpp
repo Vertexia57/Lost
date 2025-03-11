@@ -116,6 +116,22 @@ namespace lost
 		return tex;
 	}
 
+	Texture makeTexture(unsigned int openGLTexture, const char* id)
+	{
+		lost::Texture tex = nullptr;
+
+		if (!_textureRM->hasValue(id))
+		{
+			tex = new lost::_Texture();
+			tex->makeTexture(openGLTexture);
+		}
+		else
+			tex = _textureRM->getValue(id);
+
+		_textureRM->addValue(tex, id);
+		return tex;
+	}
+
 	Texture getTexture(const char* id)
 	{
 		return _textureRM->getValue(id);

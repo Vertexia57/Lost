@@ -22,6 +22,7 @@ namespace lost
 
 	Texture loadTexture(const char* fileLocation, const char* id = nullptr);
 	Texture makeTexture(const char* data, int width, int height, const char* id, unsigned int format = LOST_FORMAT_RGBA);
+	Texture makeTexture(unsigned int openGLTexture, const char* id);
 	Texture getTexture(const char* id);
 	void    unloadTexture(const char* id);
 	void    unloadTexture(Texture texture);

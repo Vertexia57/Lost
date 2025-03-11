@@ -19,8 +19,11 @@ namespace lost
 
 	_Texture::~_Texture()
 	{
-		glDeleteTextures(1, &m_Texture);
-		delete m_TextureMaterial;
+		if (m_HandleDeletion)
+		{
+			glDeleteTextures(1, &m_Texture);
+			delete m_TextureMaterial;
+		}
 	}
 
 	void _Texture::loadTexture(const char* dir)
@@ -70,6 +73,8 @@ namespace lost
 			*m_TextureMaterial = _Material(lost::_defaultShader, { this });
 
 		debugLog(std::string("Successfully loaded image at \"") + dir + "\"", LOST_LOG_SUCCESS);
+
+		m_HandleDeletion = true;
 	}
 
 	void _Texture::makeTexture(const char* data, int width, int height, unsigned int format)
@@ -100,6 +105,25 @@ namespace lost
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+		m_TextureMaterial = new _Material(lost::_defaultShader, { this });
+
+		m_HandleDeletion = true;
+	}
+
+	void _Texture::makeTexture(unsigned int openGLTexture, bool handleDelete)
+	{
+		m_HandleDeletion = handleDelete;
+
+		if (m_Texture != -1)
+		{
+			glDeleteTextures(1, &m_Texture);
+			delete m_TextureMaterial;
+		}
+
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_Width);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_Height);
+
+		m_Texture = openGLTexture;
 		m_TextureMaterial = new _Material(lost::_defaultShader, { this });
 	}
 
