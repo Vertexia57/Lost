@@ -23,6 +23,8 @@ namespace lost
 	Shader _defaultShader = nullptr;
 
 	Texture _defaultWhiteTexture = nullptr;
+	Texture _defaultBlackTexture = nullptr;
+	Texture _defaultNormalTexture = nullptr;
 	Material _defaultWhiteMaterial = nullptr;
 
 	std::stack<unsigned int> _windowContextStack;
@@ -89,6 +91,14 @@ namespace lost
 		const char whitePixel[4] = {255, 255, 255, 255};
 		_defaultWhiteTexture->makeTexture(whitePixel, 1, 1, LOST_FORMAT_RGBA);
 		_defaultWhiteMaterial = new _Material(_defaultShader, { _defaultWhiteTexture });
+
+		_defaultBlackTexture = new _Texture();
+		const char blackPixel[4] = { 0, 0, 0, 0 };
+		_defaultBlackTexture->makeTexture(blackPixel, 1, 1, LOST_FORMAT_RGBA);
+
+		_defaultNormalTexture = new _Texture();
+		const char normalPixel[4] = { 255 / 2, 255 / 2, 255, 255 };
+		_defaultNormalTexture->makeTexture(normalPixel, 1, 1, LOST_FORMAT_RGBA);
 	}
 
 	// Terminate GLFW and remove all window contexts from heap
@@ -105,6 +115,8 @@ namespace lost
 		delete _invisibleContext;
 		delete _defaultShader;
 
+		delete _defaultNormalTexture;
+		delete _defaultBlackTexture;
 		delete _defaultWhiteTexture;
 		delete _defaultWhiteMaterial;
 	}
@@ -146,6 +158,16 @@ namespace lost
 	const Texture _getDefaultWhiteTexture()
 	{
 		return _defaultWhiteTexture;
+	}
+
+	const Texture _getDefaultBlackTexture()
+	{
+		return _defaultBlackTexture;
+	}
+
+	const Texture _getDefaultNormalTexture()
+	{
+		return _defaultNormalTexture;
 	}
 
 	Window createWindow(int width, int height, const char* title)
@@ -631,7 +653,8 @@ namespace lost
 		}
 
 		glViewport(0, 0, context->width, context->height);
-		lost::_updateGL();
+		if (_currentContextID == 0)
+			lost::_updateGL();
 		lost::_startRender();
 
 		_defaultShader->bind();

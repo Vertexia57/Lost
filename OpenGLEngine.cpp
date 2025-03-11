@@ -8,17 +8,87 @@ int main()
 	lost::addOutputBuffer("normal", {0.5, 0.5, 1.0f, 1.0f});
 	lost::init(LOST_RENDER_3D);
 
-	lost::createWindow(500, 500);
+	lost::Window A = lost::createWindow(500, 500);
 	lost::useVSync(true);
+	lost::Window B = lost::createWindow(500, 500);
 
 	lost::setupImGui();
 
 	lost::Shader shader = lost::loadShader(nullptr, "data/fragment.frag", "phongShader");
+	lost::Mesh mesh = lost::loadMesh("data/stanford-bunny.obj");
+	lost::Material mat = lost::makeMaterial(
+		{ 
+			lost::_getDefaultWhiteTexture(), 
+			lost::_getDefaultWhiteTexture(), 
+			lost::_getDefaultWhiteTexture() 
+		}, "rabbit", shader
+	);
 
-	lost::Mesh mesh = lost::loadMesh("data/cubeUV.obj");
-	lost::Material mat = lost::makeMaterial({ lost::loadTexture("data/BrickAlbedo.png"), lost::_getDefaultWhiteTexture(), lost::loadTexture("data/BrickNormal.png")}, "WhiteMat", shader);
+	// Nardo Material List
+	/*
+	lost::Mesh mesh = lost::loadMesh("data/Nardo.obj");
+	std::vector<lost::Material> nardoMaterialList =
+	{
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/body.png"),
+				lost::_getDefaultBlackTexture(),
+				lost::loadTexture("data/Textures/bodyNorm.png"),
+			}, "body", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/misc.png"),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "misc", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/eyes.png"),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "eyes", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/fluff.png"),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "fluff", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::_getDefaultWhiteTexture(),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "specular", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/mawBase.png"),
+				lost::loadTexture("data/Textures/mawRoughness.png"),
+				lost::loadTexture("data/Textures/mawNormal.png"),
+			}, "maw", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::_getDefaultWhiteTexture(),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "saliva", shader
+		),
+		lost::makeMaterial(
+			{
+				lost::loadTexture("data/Textures/hair.png"),
+				lost::_getDefaultBlackTexture(),
+				lost::_getDefaultNormalTexture()
+			}, "hair", shader
+		),
+	};
+	*/
 
-	glm::vec3 cameraPosition = { 0.0f, 0.0f, 0.0f };
+	lost::Vec3 cameraPosition = { 0.0f, 0.0f, 0.0f };
 	float camYaw = 0.0f;
 	float camPit = 0.0f;
 	float cameraSpeed = 0.1f;
@@ -33,11 +103,11 @@ int main()
 		//     Window 1  
 		// [--------------]
 
-		lost::beginFrame();
+		lost::beginFrame(A);
 
 		uptime += lost::getDeltaTime() / 1000.0f;
 
-		if (lost::getKeyTapped(LOST_KEY_C))
+		if (lost::getKeyTapped(LOST_KEY_C) && lost::getKeyDown(LOST_KEY_LEFT_SHIFT))
 		{
 			cameraActive = !cameraActive;
 			lost::setMousePosition(lost::getWidth() / 2.0f, lost::getHeight() / 2.0f);
@@ -63,8 +133,8 @@ int main()
 		if (lost::getKeyTapped(LOST_KEY_ESCAPE))
 			lost::closeAllWindows();
 
-		glm::vec3 forwardVector = glm::vec3(sin(camYaw) * -cos(camPit), cos(camYaw) * -cos(camPit), -sin(camPit));
-		glm::vec3 rightVector = glm::vec3(-cos(camYaw), sin(camYaw), 0.0f);
+		lost::Vec3 forwardVector = lost::Vec3(sin(camYaw) * -cos(camPit), cos(camYaw) * -cos(camPit), -sin(camPit));
+		lost::Vec3 rightVector = lost::Vec3(-cos(camYaw), sin(camYaw), 0.0f);
 
 		if (lost::getKeyDown('S'))
 			cameraPosition -= forwardVector * cameraSpeed;
@@ -74,9 +144,9 @@ int main()
 			cameraPosition += forwardVector * cameraSpeed;
 		if (lost::getKeyDown('A'))
 			cameraPosition -= rightVector * cameraSpeed;
-		if (lost::getKeyDown(LOST_KEY_SPACE))
+		if (lost::getKeyDown('E'))
 			cameraPosition.z += cameraSpeed;
-		if (lost::getKeyDown(LOST_KEY_LEFT_SHIFT))
+		if (lost::getKeyDown('Q'))
 			cameraPosition.z -= cameraSpeed;
 
 		cameraSpeed *= pow(2, lost::getMouseScroll());
@@ -98,6 +168,14 @@ int main()
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();
 
+		lost::endFrame();
+
+		lost::beginFrame(B);
+
+		lost::setCameraPosition({ 0.5f * sin(uptime), 0.5f * cos(uptime), 0.3f });
+		lost::cameraLookAt({ 0.0f, 0.0f, 0.1f });
+
+		lost::renderMesh(mesh, { mat }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 		lost::endFrame();
 	}
 

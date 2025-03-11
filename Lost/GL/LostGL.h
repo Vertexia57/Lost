@@ -25,6 +25,8 @@ namespace lost
 
 	const Material _getDefaultWhiteMaterial();
 	const Texture _getDefaultWhiteTexture();
+	const Texture _getDefaultBlackTexture();
+	const Texture _getDefaultNormalTexture();
 
 	void beginFrame(Window context = nullptr);
 	void endFrame();

@@ -161,9 +161,9 @@ namespace lost
 		_getCurrentCamera()->popMatrix();
 	}
 
-	void setCameraTransform(const glm::vec3& translate, const glm::vec3& rotation, const glm::vec3& scale)
+	void setCameraTransform(const lost::Vec3& translate, const lost::Vec3& rotation, const lost::Vec3& scale)
 	{
-		_getCurrentCamera()->setTransform(translate, rotation, scale);
+		_getCurrentCamera()->setTransform(translate.getGLM(), rotation.getGLM(), scale.getGLM());
 	}
 
 	void cameraUseScreenSpace()
@@ -181,29 +181,29 @@ namespace lost
 		_getCurrentCamera()->setPerspective(degrees);
 	}
 
-	void setCameraPosition(const glm::vec3& translate)
+	void setCameraPosition(const lost::Vec3& translate)
 	{
-		_getCurrentCamera()->setTranslation(translate);
+		_getCurrentCamera()->setTranslation(translate.getGLM());
 	}
 
-	void setCameraRotation(const glm::vec3& rotation)
+	void setCameraRotation(const lost::Vec3& rotation)
 	{
-		_getCurrentCamera()->setRotation(rotation);
+		_getCurrentCamera()->setRotation(rotation.getGLM());
 	}
 
-	void setCameraScale(const glm::vec3& scale)
+	void setCameraScale(const lost::Vec3& scale)
 	{
-		_getCurrentCamera()->setScale(scale);
+		_getCurrentCamera()->setScale(scale.getGLM());
 	}
 
-	void cameraLookAt(const glm::vec3& location)
+	void cameraLookAt(const lost::Vec3& location)
 	{
-		_getCurrentCamera()->lookAt(location);
+		_getCurrentCamera()->lookAt(location.getGLM());
 	}
 
-	void cameraLookAtRelative(const glm::vec3& location)
+	void cameraLookAtRelative(const lost::Vec3& location)
 	{
-		_getCurrentCamera()->lookAtRelative(location);
+		_getCurrentCamera()->lookAtRelative(location.getGLM());
 	}
 
 }

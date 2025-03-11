@@ -156,6 +156,11 @@ namespace lost
 	// Sets the current backface culling override, LOST_CULL_AUTO is default, which doesn't override material cull settings
 	void setCullMode(unsigned int cullMode);
 
+	// Returns the OpenGL texture id of the render pass selected, by default getting the render texture of the window that's active
+	unsigned int getRenderTexture(unsigned int pass, unsigned int windowID = -1);
+	// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
+	unsigned int getDepthTexture(unsigned int windowID = -1);
+
 	class Renderer
 	{
 	public:
@@ -190,6 +195,11 @@ namespace lost
 
 		virtual void startRender();
 		virtual void finalize();
+
+		// Returns the render texture used by the pass at the index given
+		unsigned int getRenderTexture(unsigned int windowID, unsigned int pass);
+		// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
+		unsigned int getDepthTexture(unsigned int windowID = -1);
 
 		// Generates a new VAO for the renderer, this binds to the latest context created
 		void generateNewVAO();
@@ -362,5 +372,4 @@ namespace lost
 	private:
 		std::vector<MeshRenderData> m_MainRenderData;
 	};
-
 }

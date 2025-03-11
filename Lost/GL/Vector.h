@@ -34,22 +34,22 @@ namespace lost
 			v[1] /= rhs.v[1];
 		}
 
-		Vec2 operator+(const Vec3& rhs) const
+		Vec2 operator+(const Vec2& rhs) const
 		{
 			return { v[0] + rhs.v[0], v[1] + rhs.v[1] };
 		}
 
-		Vec2 operator-(const Vec3& rhs) const
+		Vec2 operator-(const Vec2& rhs) const
 		{
 			return { v[0] - rhs.v[0], v[1] - rhs.v[1] };
 		}
 
-		Vec2 operator*(const Vec3& rhs) const
+		Vec2 operator*(const Vec2& rhs) const
 		{
 			return { v[0] * rhs.v[0], v[1] * rhs.v[1] };
 		}
 
-		Vec2 operator/(const Vec3& rhs) const
+		Vec2 operator/(const Vec2& rhs) const
 		{
 			return { v[0] / rhs.v[0], v[1] / rhs.v[1] };
 		}
@@ -91,7 +91,7 @@ namespace lost
 			return { v[0], v[1] };
 		}
 
-		float dot(const Vec3& rhs) const
+		float dot(const Vec2& rhs) const
 		{
 			return (v[0] * rhs.v[0]) + (v[1] * rhs.v[1]);
 		}

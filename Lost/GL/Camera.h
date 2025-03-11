@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include <stack>
+#include "Vector.h"
 
 namespace lost
 {
@@ -67,7 +68,7 @@ namespace lost
 	void popMatrix();
 
 	// Sets every value of the camera at once, is much more efficient than running all 3 seperately
-	void setCameraTransform(const glm::vec3& translate, const glm::vec3& rotation, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f });
+	void setCameraTransform(const lost::Vec3& translate, const lost::Vec3& rotation, const lost::Vec3& scale = { 1.0f, 1.0f, 1.0f });
 	
 	// Sets the current camera's projection to screenspace, making rendering 2D (with depth testing)
 	void cameraUseScreenSpace();
@@ -78,13 +79,13 @@ namespace lost
 	void setCameraFOV(float degrees);
 
 	// Sets the position of the camera
-	void setCameraPosition(const glm::vec3& position);
+	void setCameraPosition(const lost::Vec3& position);
 	// Sets the rotation of the camera
-	void setCameraRotation(const glm::vec3& rotation);
+	void setCameraRotation(const lost::Vec3& rotation);
 	// Sets the scale of the camera (A bigger camera shrinks the world)
-	void setCameraScale(const glm::vec3& scale);
+	void setCameraScale(const lost::Vec3& scale);
 	// Sets the rotation of the camera to look at a certain point, taking the current position into account
-	void cameraLookAt(const glm::vec3& location);
+	void cameraLookAt(const lost::Vec3& location);
 	// Sets the rotation of the camera to look at a certain point, using local space
-	void cameraLookAtRelative(const glm::vec3& location);
+	void cameraLookAtRelative(const lost::Vec3& location);
 }

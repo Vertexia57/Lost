@@ -23,7 +23,7 @@
 
 namespace ImGui
 {
-	std::map<const char*, bool*> _IDToggleMap;
+	std::map<std::string, bool*> _IDToggleMap;
 
 
 	// File: 'ProggyClean.ttf' (41208 bytes)
@@ -622,7 +622,7 @@ namespace lost
 		
 		// Clear the _IDToggleMap
 		// [?] Putting it here is kinda weird, it's in the Lost namespace
-		for (typename std::map<const char*, bool*>::iterator it = ImGui::_IDToggleMap.begin(); it != ImGui::_IDToggleMap.end(); it++)
+		for (typename std::map<std::string, bool*>::iterator it = ImGui::_IDToggleMap.begin(); it != ImGui::_IDToggleMap.end(); it++)
 		{
 			delete (*it).second;
 		}
@@ -836,7 +836,7 @@ namespace lost
 
 		for (typename std::map<std::string, DataCount<Material>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
-			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##MaterialPreview").c_str(), it->first.c_str());
 			if (isOpen)
 			{
 				// Display material settings, the stuff that won't change
@@ -1275,7 +1275,7 @@ namespace lost
 
 		for (typename std::map<std::string, DataCount<Mesh>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
-			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##MeshPreview").c_str(), it->first.c_str());
 			if (isOpen)
 			{
 				CompiledMeshData* mesh = (CompiledMeshData*)(it->second.data);
@@ -1344,7 +1344,7 @@ namespace lost
 
 		for (typename std::map<std::string, DataCount<Shader>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
-			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##ShaderPreview").c_str(), it->first.c_str());
 			if (isOpen)
 			{
 				ImGui::SeparatorText("Shader Info");
@@ -1406,11 +1406,11 @@ namespace lost
 						if (uniformIt->second.location == -1)
 						{
 							ImGui::BeginDisabled();
-							isOpen = ImGui::BeginCollapsingHeaderEx(uniformIt->first.c_str(), ("[x] " + uniformIt->first).c_str());
+							isOpen = ImGui::BeginCollapsingHeaderEx((uniformIt->first + "##UniformPreview").c_str(), ("[x] " + uniformIt->first).c_str());
 						}
 						else
 						{
-							isOpen = ImGui::BeginCollapsingHeaderEx(uniformIt->first.c_str(), (uniformIt->first + (uniform.isArray ? "[]" : "")).c_str(), nullptr);
+							isOpen = ImGui::BeginCollapsingHeaderEx((uniformIt->first + "##UniformPreview").c_str(), (uniformIt->first + (uniform.isArray ? "[]" : "")).c_str(), nullptr);
 							nameList.push_back(uniformIt->first.c_str());
 							uniformList.push_back(&uniform);
 						}
@@ -1658,7 +1658,7 @@ namespace lost
 
 		for (typename std::map<std::string, DataCount<Font>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
-			bool isOpen = ImGui::BeginCollapsingHeaderEx(it->first.c_str(), it->first.c_str());
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##FontPreview").c_str(), it->first.c_str());
 			if (isOpen)
 			{
 				ImGui::SeparatorText("Font Info");
@@ -1716,7 +1716,7 @@ namespace lost
 			ImGui::Text("Available Output Passes:");
 			for (int i = 0; i < state.currentBuffers.size(); i++)
 			{
-				bool isOpen = ImGui::BeginCollapsingHeaderEx(state.currentBuffers[i].name.c_str(), state.currentBuffers[i].name.c_str());
+				bool isOpen = ImGui::BeginCollapsingHeaderEx((state.currentBuffers[i].name + "##OutputBuffer").c_str(), state.currentBuffers[i].name.c_str());
 				if (isOpen)
 				{
 					ImGui::BulletText("Location: %i", i);
@@ -1740,7 +1740,7 @@ namespace lost
 				Window window = windows[i];
 				ImGui::PushID(i);
 
-				bool isOpen = ImGui::BeginCollapsingHeaderEx("windowTab", (std::string("Window ") + std::to_string(i)).c_str());
+				bool isOpen = ImGui::BeginCollapsingHeaderEx((std::to_string(i) + "windowTab##WindowTabPreview").c_str(), (std::string("Window ") + std::to_string(i)).c_str());
 
 				if (isOpen)
 				{
@@ -1783,6 +1783,30 @@ namespace lost
 						if (ImGui::Button("Fullscreen Window", { 300, 0 }))
 							lost::makeWindowFullscreen(true, window);
 					}
+
+					ImGui::SeparatorText("Render Passes");
+					for (int j = 0; j < state.currentBuffers.size(); j++)
+					{
+						bool isOpen = ImGui::BeginCollapsingHeaderEx((state.currentBuffers[j].name + std::to_string(i) + "##OutputBuffer").c_str(), state.currentBuffers[j].name.c_str());
+						if (isOpen)
+						{
+							float width = ImGui::GetContentRegionAvail().x;
+							float ratio = (float)getHeight(getWindow(i)) / (float)getWidth(getWindow(i));
+							ImGui::Image((ImTextureID)(getRenderTexture(j, i)), { width, width * ratio }, { 0.0, 1.0 }, { 1.0, 0.0 });
+						}
+						ImGui::EndCollapsingHeaderEx(isOpen);
+					}
+
+					// Display depth buffer
+					bool depthIsOpen = ImGui::BeginCollapsingHeaderEx((std::to_string(i) + "DepthBuffer##OutputBuffer").c_str(), "Depth Buffer");
+					if (depthIsOpen)
+					{
+						float width = ImGui::GetContentRegionAvail().x;
+						float ratio = (float)getHeight(getWindow(i)) / (float)getWidth(getWindow(i));
+						ImGui::Image((ImTextureID)(getDepthTexture(i)), { width, width * ratio }, { 0.0, 1.0 }, { 1.0, 0.0 });
+					}
+					ImGui::EndCollapsingHeaderEx(depthIsOpen);
+
 				}
 
 				ImGui::EndCollapsingHeaderEx(isOpen);
@@ -1797,35 +1821,35 @@ namespace lost
 			ImGui::SeparatorText("Textures");
 			ImGui::Text("Currently loaded %i textures...", _textureRM->getValueCount());
 
-			bool isOpen = ImGui::BeginCollapsingHeaderEx("textureAssetList", "View Textures");
+			bool isOpen = ImGui::BeginCollapsingHeaderEx("##textureAssetList", "View Textures");
 			if (isOpen)
 				_imGuiDisplayTextureAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Materials");
 			ImGui::Text("Currently loaded %i materials...", _materialRM->getValueCount());
-			isOpen = ImGui::BeginCollapsingHeaderEx("materialAssetList", "View Materials");
+			isOpen = ImGui::BeginCollapsingHeaderEx("##materialAssetList", "View Materials");
 			if (isOpen)
 				_imGuiDisplayMaterialAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Meshes");
 			ImGui::Text("Currently loaded %i meshes...", _meshRM->getValueCount());
-			isOpen = ImGui::BeginCollapsingHeaderEx("meshAssetList", "View Meshes");
+			isOpen = ImGui::BeginCollapsingHeaderEx("##meshAssetList", "View Meshes");
 			if (isOpen)
 				_imGuiDisplayMeshAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Shaders");
 			ImGui::Text("Currently loaded %i shaders...", _shaderRM->getValueCount());
-			isOpen = ImGui::BeginCollapsingHeaderEx("shaderAssetList", "View Shaders");
+			isOpen = ImGui::BeginCollapsingHeaderEx("##shaderAssetList", "View Shaders");
 			if (isOpen)
 				_imGuiDisplayShaderAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Fonts");
 			ImGui::Text("Currently loaded %i fonts...", _fontRM->getValueCount());
-			isOpen = ImGui::BeginCollapsingHeaderEx("fontAssetList", "View Fonts");
+			isOpen = ImGui::BeginCollapsingHeaderEx("##fontAssetList", "View Fonts");
 			if (isOpen)
 				_imGuiDisplayFontAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);

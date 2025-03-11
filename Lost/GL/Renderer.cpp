@@ -142,6 +142,16 @@ namespace lost
 #endif
 	}
 
+	unsigned int Renderer::getRenderTexture(unsigned int windowID, unsigned int pass)
+	{
+		return m_MainRenderPasses[windowID]->textures[pass];
+	}
+
+	unsigned int Renderer::getDepthTexture(unsigned int windowID)
+	{
+		return m_MainRenderPasses[windowID]->depthStencilTexture;
+	}
+
 	void Renderer::generateNewVAO()
 	{
 		pushWindow();
@@ -1137,5 +1147,21 @@ namespace lost
 	void setCullMode(unsigned int cullMode)
 	{
 		_renderer->setCullMode(cullMode);
+	}
+
+	unsigned int getRenderTexture(unsigned int pass, unsigned int windowID)
+	{
+		if (windowID == -1)
+			windowID = getCurrentWindowID();
+
+		return _renderer->getRenderTexture(windowID, pass);
+	}
+
+	unsigned int getDepthTexture(unsigned int windowID)
+	{
+		if (windowID == -1)
+			windowID = getCurrentWindowID();
+
+		return _renderer->getDepthTexture(windowID);
 	}
 }

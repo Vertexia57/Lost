@@ -10,7 +10,8 @@ in vec3 fragWorldNormal;
 in mat4 fragModel;
 in mat3 TBN;
 
-layout (location=0) out vec4 finalColor;
+layout (location=0) out vec4 colorOut;
+layout (location=1) out vec4 normalOut;
 
 uniform sampler2D colorTex;
 uniform sampler2D specularTex;
@@ -91,5 +92,6 @@ vec3 calcNormal()
 void main() {
 	finalNormal = calcNormal();
 
-	finalColor = vec4(calcDiffuse() + calcSpecular(), texture(colorTex, fragTexCoord).a);
+	colorOut = vec4(calcDiffuse() + calcSpecular(), texture(colorTex, fragTexCoord).a);
+	normalOut = vec4(finalNormal / 2.0 + 0.5, 1.0);
 }
