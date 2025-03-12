@@ -91,6 +91,7 @@ namespace lost
 		const char whitePixel[4] = {255, 255, 255, 255};
 		_defaultWhiteTexture->makeTexture(whitePixel, 1, 1, LOST_FORMAT_RGBA);
 		_defaultWhiteMaterial = new _Material(_defaultShader, { _defaultWhiteTexture });
+		_defaultWhiteMaterial->setFaceCullMode(LOST_CULL_NONE);
 
 		_defaultBlackTexture = new _Texture();
 		const char blackPixel[4] = { 0, 0, 0, 0 };
@@ -150,22 +151,22 @@ namespace lost
 		lost::_resizeFrameBuffers(id, width, height);
 	}
 
-	const Material _getDefaultWhiteMaterial()
+	const Material getDefaultWhiteMaterial()
 	{
 		return _defaultWhiteMaterial;
 	}
 
-	const Texture _getDefaultWhiteTexture()
+	const Texture getDefaultWhiteTexture()
 	{
 		return _defaultWhiteTexture;
 	}
 
-	const Texture _getDefaultBlackTexture()
+	const Texture getDefaultBlackTexture()
 	{
 		return _defaultBlackTexture;
 	}
 
-	const Texture _getDefaultNormalTexture()
+	const Texture getDefaultNormalTexture()
 	{
 		return _defaultNormalTexture;
 	}

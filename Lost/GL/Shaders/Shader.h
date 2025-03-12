@@ -15,54 +15,54 @@ enum MaterialType
 // [!] TODO: Support doubles, shorts and half floats
 enum UniformDataType
 {
-	LOST_FLOAT,
-	LOST_VEC2,
-	LOST_VEC3,
-	LOST_VEC4,
-	LOST_INT,
-	LOST_IVEC2,
-	LOST_IVEC3,
-	LOST_IVEC4,
-	LOST_UINT,
-	LOST_UVEC2,
-	LOST_UVEC3,
-	LOST_UVEC4,
-	LOST_DOUBLE,
-	LOST_DVEC2,
-	LOST_DVEC3,
-	LOST_DVEC4,
-	LOST_BOOL,
-	LOST_BVEC2,
-	LOST_BVEC3,
-	LOST_BVEC4,
-	LOST_STRUCT,
-	LOST_ERROR = -1
+	LOST_TYPE_FLOAT,
+	LOST_TYPE_VEC2,
+	LOST_TYPE_VEC3,
+	LOST_TYPE_VEC4,
+	LOST_TYPE_INT,
+	LOST_TYPE_IVEC2,
+	LOST_TYPE_IVEC3,
+	LOST_TYPE_IVEC4,
+	LOST_TYPE_UINT,
+	LOST_TYPE_UVEC2,
+	LOST_TYPE_UVEC3,
+	LOST_TYPE_UVEC4,
+	LOST_TYPE_DOUBLE,
+	LOST_TYPE_DVEC2,
+	LOST_TYPE_DVEC3,
+	LOST_TYPE_DVEC4,
+	LOST_TYPE_BOOL,
+	LOST_TYPE_BVEC2,
+	LOST_TYPE_BVEC3,
+	LOST_TYPE_BVEC4,
+	LOST_TYPE_STRUCT,
+	LOST_TYPE_ERROR = -1
 };
 
 namespace lost
 {
 
 	const static std::map<std::string, unsigned int> _UniformNameIDMap = {
-		{ "float",	LOST_FLOAT  },
-		{ "vec2",	LOST_VEC2   },
-		{ "vec3",	LOST_VEC3   },
-		{ "vec4",	LOST_VEC4   },
-		{ "int",	LOST_INT    },
-		{ "ivec2",	LOST_IVEC2  },
-		{ "ivec3",	LOST_IVEC3  },
-		{ "ivec4",	LOST_IVEC4  },
-		{ "uint",	LOST_UINT   },
-		{ "uvec2",	LOST_UVEC2  },
-		{ "uvec3",	LOST_UVEC3  },
-		{ "uvec4",	LOST_UVEC4  },
-		{ "double",	LOST_DOUBLE },
-		{ "dvec2",	LOST_DVEC2  },
-		{ "dvec3",	LOST_DVEC3  },
-		{ "dvec4",	LOST_DVEC4  },
-		{ "bool",	LOST_BOOL   },
-		{ "bvec2",	LOST_BVEC2  },
-		{ "bvec3",	LOST_BVEC3  },
-		{ "bvec4",	LOST_BVEC4  }
+		{ "float",	LOST_TYPE_FLOAT  },
+		{ "vec2",	LOST_TYPE_VEC2   },
+		{ "vec3",	LOST_TYPE_VEC3   },
+		{ "vec4",	LOST_TYPE_VEC4   },
+		{ "int",	LOST_TYPE_INT    },
+		{ "ivec2",	LOST_TYPE_IVEC2  },
+		{ "ivec3",	LOST_TYPE_IVEC3  },
+		{ "ivec4",	LOST_TYPE_IVEC4  },
+		{ "uint",	LOST_TYPE_UINT   },
+		{ "uvec2",	LOST_TYPE_UVEC2  },
+		{ "uvec3",	LOST_TYPE_UVEC3  },
+		{ "uvec4",	LOST_TYPE_UVEC4  },
+		{ "double",	LOST_TYPE_DOUBLE },
+		{ "dvec2",	LOST_TYPE_DVEC2  },
+		{ "dvec3",	LOST_TYPE_DVEC3  },
+		{ "dvec4",	LOST_TYPE_DVEC4  },
+		{ "bool",	LOST_TYPE_BOOL   },
+		{ "bvec2",	LOST_TYPE_BVEC2  },
+		{ "bvec3",	LOST_TYPE_BVEC3  },
+		{ "bvec4",	LOST_TYPE_BVEC4  }
 	};
 
 	const static std::vector<std::string> _UniformIDName = {
@@ -176,8 +176,6 @@ namespace lost
 		void(*m_ShaderBindOverride)(PPShader*) = nullptr;
 	};
 
-	// [!] TODO: Documentation
-
 	/// <summary>
 	/// Set a uniform in the shader given. Automatically caches the uniform names and their locations.
 	/// </summary>
@@ -194,7 +192,7 @@ namespace lost
 	/// <param name="shader">The shader to set the uniform on</param>
 	/// <param name="dataAt">A void* to the location of the data to set the uniform to</param>
 	/// <param name="uniformLoc">The location in the shader the uniform is at, use lost::getUniformLocation() to find this value</param>
-	/// <param name="type">The type of the data the uniform takes, Eg. LOST_VEC4, does not accept GL types</param>
+	/// <param name="type">The type of the data the uniform takes, Eg. LOST_TYPE_VEC4, does not accept GL types</param>
 	/// <param name="count">If working with arrays, the amount of indices to set</param>
 	/// <param name="offset">If working with arrays, the offset in the array to start setting at</param>
 	void setUniform(Shader shader, void* dataAt, unsigned int uniformLoc, unsigned int type, unsigned int count = 1, unsigned int offset = 0);

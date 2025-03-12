@@ -11,7 +11,7 @@ Every function listed is in the `lost` namespace, and must be prefixed with `los
 	- [[#Lost State Functions]]
 	- [[Lost Cheat Sheet#ImGUI|ImGUI]]
 - Rendering
-	- [[#Renderer Functions]] (*Contains functions which tell the renderer what to do*)
+	- [[#Renderer Functions]] (*Contains functions which interact with the renderer*)
 	- [[#Shader Functions]]
 	- [[#Texture And Material Functions]]
 	- [[#Mesh Functions]]
@@ -99,6 +99,12 @@ void endFrame(); // Swaps the frame buffer to the screen, displaying it to the u
 
 // Output Buffers. These are outputs in normal shaders and are inputs in post processing shaders
 void addOutputBuffer(const char* bufferName, unsigned int format = LOST_FORMAT_RGBA, float* fillColor = nullptr); // By default fills with black, regardless of format
+
+// Returns the OpenGL texture id of the render pass selected, by default getting the render texture of the window that's active
+unsigned int getRenderTexture(unsigned int pass, unsigned int windowID = -1);
+
+// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
+unsigned int getDepthTexture(unsigned int windowID = -1);
 ```
 ---
 # Rendering Functions
@@ -110,22 +116,34 @@ void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f
 //      "bounds" is the area of the screen it renders to and "texBounds" is the area on the texture it will use in pixels.
 //      by default rendering the whole texture
 
+void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
+//    ^ Renders the texture to the screen using the default shader, bounds is the area of the screen it renders to 
+//      and texBounds is the area on the texture it will use in pixels, by default rendering the whole texture
 void renderTexture(Texture texture, float x, float y, float w = -1, float h = -1);
-//    ^ Renders the texture to the screen in the area given, the -1 just shows that it uses the texture's width as the width instead of a set width
+//    ^ Renders the texture to the screen in the area given
 
 // Renders the mesh given to the screen
 void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform);
 void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
 
+// Renders a rect to the screen, this can use batching unlike renderQuad
+void renderRect(Material mat, Bounds2D bounds);
+// Renders a rect in 3D space, taking in a 3D position, size and rotation, can use batching unlike renderQuad3D
+void renderRect3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f });
+// Renders a quad in 3D space, taking in a 3D position, size and rotation, texBounds is the UV bounds from 0.0f - 1.0f
 void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }); 
-//    ^ Renders a quad in 3D space, taking in a 3D position, size and rotation, texBounds is the UV bounds from 0.0f - 1.0f
-
+// Renders a quad to the screen not caring for perspective or view, texBounds is the UV bounds from 0.0f - 1.0f
 void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
-//    ^ Renders a quad to the screen not caring for perspective or view, texBounds is the UV bounds from 0.0f - 1.0f
 
 void setCullMode(unsigned int cullMode)
 //    ^ Sets the cull mode of the renderer, using LOST_CULL_FRONT, LOST_CULL_BACK, LOST_CULL_NONE, LOST_CULL_FRONT_AND_BACK and LOST_CULL_AUTO
 //      LOST_CULL_AUTO is the default, when this mode is set it uses the cull mode of the material being used (Which by default is LOST_CULL_BACK)
+
+void setFillColor(float r, float g, float b, float a = 255.0f); // Sets the fill color used by the render when creating meshes
+const Color& getFillColor(); // Returns the fill color currently set in the state machine
+const Color& getNormalizedColor(); // Returns the fill color (normalized to 0 - 1) currently set in the state machine
+
+void setClearColor(unsigned int id, Color color); // Sets the clear color of the output texture where color is normalized
 ```
 
 ---
@@ -153,8 +171,8 @@ void setCameraScale(const glm::vec3& scale); // Sets the scale of the camera (A 
 void cameraLookAt(const glm::vec3& location); // Sets the rotation of the camera to look at a certain point, taking the current position into account
 void cameraLookAtRelative(const glm::vec3& location); // Sets the rotation of the camera to look at a certain point relative to the current position of the camera
 
+// Sets every value of the camera at once, is much more efficient than running all 3 seperately
 void setCameraTransform(const glm::vec3& translate, const glm::vec3& rotation, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f });
-//    ^ Sets every value of the camera at once, is much more efficient than running all 3 seperately
 ```
 ---
 # Shader Functions
@@ -164,33 +182,26 @@ More detailed descriptions for these functions can be found [[here]].
 
 ```cpp
 // Shader Load Functions
+
+// When either is nullptr (except id) it will use the default in-built shader
 Shader loadShader(const char* vertexLoc, const char* fragmentLoc, const char* id); 
-//                             ^ When either is nullptr, loads the default module for that pipeline
 Shader makeShader(const char* vertexCode, const char* fragmentCode, const char* id);  
-//                             ^ When either is nullptr, loads the default module for that pipeline
 Shader getShader(const char* id);
 void   unloadShader(const char* id);
 void   unloadShader(Shader& shader);
 void   forceUnloadShader(const char* id);
 void   forceUnloadShader(Shader& shader);
 
-void   useShader(Shader shader);
-void   clearShader(); // Uses the base shader
-void   setUniform(const char* uniformName, void* data);
+void   setUniform(Shader shader, void* dataAt, const char* uniformName, unsigned int count = 1, unsigned int offset = 0);
+//      ^ Sets a uniform in the shader given. Automatically caches the uniform names and their locations.
+//        When working with arrays count is the amount of indices to set and offset is the offset to start setting at
+void   setUniform(Shader shader, void* dataAt, unsigned int uniformLoc, unsigned int type, unsigned int count = 1, unsigned int offset = 0);
+//      ^ Same as other function but uniformLoc and type are used, use lost::getUniformLocation() to find the location
 
-// Post Processing Functions
-PostProcessShader loadPostProcessShader(const char* vertexLoc, const char* fragmentLoc, const char* id, RenderPass* passInputs = nullptr); 
-//                 ^ Creates a post processing shader, "passInputs" are the extra passes that are fed into the shader's texture slots  
-//                   When either is nullptr, loads the default module for that pipeline Eg. makePostProcessShader(nullptr, "blur.fs", "blur");
-PostProcessShader makePostProcessShader(const char* vertexCode, const char* fragmentCode, const char* id, RenderPass* passInputs = nullptr); // Same as above
-PostProcessShader getPostProcessShader(const char* id);
-void              unloadPostProcessShader(PostProcesShader& ppShader);
-void              forceUnloadPostProcessShader(PostProcesShader& ppShader);
-
-void              enablePostProcessShader(PostProcessShader ppShader); // Enables a post processing shader in the renderer
-void              disablePostProcessShader(PostProcessShader ppShader); // Disables a post processing shader in the renderer
-void              bindCustomPostProcessFunction(PostProcessShader ppShader, void(*callback)(PostProcessShader ppShader));
-//                 ^ Takes a custom callback and uses that function when the post process shader is being ran, this allows for custom texture managment
+// Returns the location of the uniform in the shader given
+unsigned int getUniformLocation(Shader shader, const char* uniformName);
+// Returns the type of the uniform in the shader given
+unsigned int getUniformType(Shader shader, const char* uniformName);
 ```
 ---
 # Texture And Material Functions
@@ -201,13 +212,13 @@ More detailed descriptions for these functions can be found [[here]].
 ```cpp
 // Image Functions (CPU/RAM side images. Slow but modifiable) Images cannot be rendered to the screen and need to be made into textures to work
 // NOT CURRENTLY IMPLEMENTED
-Image   loadImage(const char* fileLocation, const char* id = nullptr);
-Image   getImage(const char* id);
-void    unloadImage(Image image);
-void    forceUnloadImage(Image image);
+// Image   loadImage(const char* fileLocation, const char* id = nullptr);
+// Image   getImage(const char* id);
+// void    unloadImage(Image image);
+// void    forceUnloadImage(Image image);
 
 // Texture Functions (GPU/VRAM side images. Fast but constant)
-Texture loadTexture(const char* fileLocation, const char* id = nullptr);
+Texture loadTexture(const char* fileLocation, const char* id = nullptr); // Falls back to getDefaultWhiteTexture()
 Texture makeTexture(Image image, const char* id = nullptr);
 Texture getTexture(const char* id);
 void    unloadTexture(const char* id);
@@ -224,6 +235,16 @@ void     destroyMaterial(const char* id);
 void     destroyMaterial(Material material);
 void     forceDestroyMaterial(const char* id);
 void     forceDestroyMaterial(Material material);
+
+// Defaults
+Texture getDefaultWhiteTexture(); // Returns a 1x1 texture with a white pixel in it
+Texture getDefaultBlackTexture(); // Returns a 1x1 texture with a black pixel in it
+Texture getDefaultNormalTexture(); // Returns a 1x1 texture with a pixle colored: (125, 125, 255, 255) or normalized: (0.5, 0.5, 1.0, 1.0) 
+Material getDefaultWhiteMaterial(); // Returns a white material that uses the base shader
+
+void setMaterialUniform(Material mat, const char* uniformName, const void* data, unsigned int dataType);
+//    ^ Will set a value in the material which when the material is used will set a uniform in the shader
+//      This is useful if the material needs to set specific values that aren't textures, like specular intensity and likewise.
 ```
 ---
 # Mesh Functions
@@ -247,16 +268,17 @@ void forceUnloadMesh(Mesh& obj);
 //   Immediate Mesh Creation
 // [-------------------------]
 
+// Starts the creation of a mesh which will be rendered once endMesh() is ran
 void beginMesh(unsigned int renderMode = LOST_MESH_TRIANGLES, bool screenspace = false);
-//    ^ Starts the creation of a mesh which will be rendered once endMesh() is ran
 
-void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }, Vec3 vertexNormal = { 0.0f, 0.0f, 1.0f }); 
+// Adds a vertex to the mesh being created, must be ran after beginMesh()
+void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }); 
 void addVertex(Vertex vertex); 
-//    ^ Adds a vertex to the mesh being created, must be ran after beginMesh()
 
+// Finishes the creation of a mesh and renders it, using the materials provided
+void endMesh(); // Uses a default white material, which color can be changed with lost::setFillColor()
 void endMesh(Material material);
 void endMesh(std::vector<Material>& materials);
-//    ^ Finishes the creation of a mesh and renders it, using the materials provided
 
 void setMeshTransform(glm::mat4x4& transform); // Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
 void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
@@ -290,10 +312,10 @@ Vec2  textBounds(const char* text, Font font, float scale); // Returns the width
 float textWidth (const char* text, Font font, float scale); // Returns the width of what the text given would take up when rendered
 float textHeight(const char* text, Font font, float scale); // Returns the height of what the text given would take up when rendered
 
+// Uses screenspace, hAlign and vAlign change the alignment of the text, horizontally and vertically
 void renderText(const char* text, Font font, Vec2 position, float scale, int hAlign = 0, int vAlign = 0);
-//    ^ Uses screenspace, hAlign and vAlign change the alignment of the text, horizontally and vertically
+// Renders text to the scene, using 3D space
 void renderTextPro3D(const char* text, Font font, Vec3 position, Vec3 rotation, Vec3 scale, int hAlign = 0, int vAlign = 0); 
-//    ^ Renders text to the scene, using 3D space
 ```
 ---
 # ImGUI
@@ -312,8 +334,8 @@ void setupImGui();
 
 // Extra functions
 void imGuiDisplayProgramInfo(); 
-//    ^ Displays a debug window which describes the current state of the engine,
-//      including loaded assets, render passes, FPS and window contexts
+//    ^ Displays a debug window which describes the current state of the engine, including loaded assets, render passes, FPS and window contexts
+//      This is one of the most extensive debug features within Lost, and it is highly advised to use it
 ```
 
 ---

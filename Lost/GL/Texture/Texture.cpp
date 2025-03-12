@@ -36,7 +36,15 @@ namespace lost
 		if (data == 0)
 		{
 			debugLog(std::string("Failed to load image at \"") + dir + "\", file may be broken, open by another program, missing or inaccessible", LOST_LOG_WARNING);
-			m_Texture = -1;
+
+			bool overridingTexture = m_Texture != -1;
+			
+			m_Texture = getDefaultWhiteTexture()->getTexture();
+			if (!overridingTexture)
+				m_TextureMaterial = new _Material(lost::_defaultShader, { this });
+			else
+				*m_TextureMaterial = _Material(lost::_defaultShader, { this });
+
 			return;
 		}
 

@@ -23,10 +23,10 @@ namespace lost
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _windowResizeCallback(GLFWwindow* window, int width, int height);
 
-	const Material _getDefaultWhiteMaterial();
-	const Texture _getDefaultWhiteTexture();
-	const Texture _getDefaultBlackTexture();
-	const Texture _getDefaultNormalTexture();
+	const Material getDefaultWhiteMaterial();
+	const Texture getDefaultWhiteTexture();
+	const Texture getDefaultBlackTexture();
+	const Texture getDefaultNormalTexture();
 
 	void beginFrame(Window context = nullptr);
 	void endFrame();

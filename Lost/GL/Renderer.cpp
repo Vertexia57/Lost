@@ -374,8 +374,8 @@ namespace lost
 		glBindBuffer(GL_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ((CompiledMeshData*)standardQuad)->indexData.size() * sizeof(int), ((CompiledMeshData*)standardQuad)->indexData.data(), GL_STATIC_DRAW);
 
-		//glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->textures[0]);
-		_getDefaultWhiteTexture()->bind(0);
+		glBindTexture(GL_TEXTURE_2D, m_MainRenderPasses[getCurrentWindowID()]->textures[0]);
+		//getDefaultWhiteTexture()->bind(0);
 
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
@@ -838,105 +838,57 @@ namespace lost
 
 	}
 
-	void renderRect(Material mat, Bounds2D bounds)
+	void renderRect(Bounds2D bounds, Bounds2D texbounds, Material mat)
 	{
-		Window currentWindow = getCurrentWindow();
-
-		// [!] TODO: Make this a function? since it scales it might not need to be
-		glm::mat4x4 transform = glm::mat4x4(
-			  2.0f / getWidth(currentWindow) * bounds.w,         0.0f,                                              0.0f,    0.0f,
-			  0.0f,                                             -2.0f / getHeight(currentWindow) * bounds.h,        0.0f,    0.0f,
-			  0.0f,                                              0.0f,                                              0.0001f, 0.0f, // [!] Todo: remove depth testing for screenspace, epsilon will not be needed here afterwards
-			 -1.0f + bounds.x / getWidth(currentWindow) * 2.0f,  1.0f - bounds.y / getHeight(currentWindow) * 2.0f, 0.1f,    1.0f
-		);
-
-		std::vector<Material> materialList = { mat };
-
-		const Color& color = getNormalizedColor();
-		CompiledMeshData mesh = {};
-		mesh.vertexData = {
-			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f
-		};
-		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
-		mesh.materialSlotIndicies = { 0 };
-
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+		renderRectPro(bounds, {0.0f, 0.0f}, 0.0f, texbounds, mat);
 	}
 
-	void renderRect3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation)
+	void renderRectPro(Bounds2D bounds, Vec2 origin, float angle, Bounds2D texbounds, Material mat)
 	{
-		glm::mat4x4 transform = glm::mat4x4(
-			size.w, 0.0f,   0.0f, 0.0f,
-			0.0f,   size.h, 0.0f, 0.0f,
-			0.0f,   0.0f,   1.0f, 0.0f,
-			0.0f,   0.0f,   0.0f, 1.0f
-		);
-		transform = glm::eulerAngleXYZ(glm::radians(rotation.x), glm::radians(rotation.y), glm::radians(rotation.z)) * transform;
-		transform[3][0] += position.x;
-		transform[3][1] += position.y;
-		transform[3][2] += position.z;
+		// If no material is given use the default one
+		if (mat == nullptr) mat = getDefaultWhiteMaterial();
 
-		glm::mat4x4 mpvTransform = _getCurrentCamera()->getPV() * transform;
-
-		std::vector<Material>materialList = { mat };
-
-		const Color& color = getNormalizedColor();
-
-		CompiledMeshData mesh = {};
-
-		mesh.vertexData = {
-			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 0.0f, 1.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f
-		};
-
-		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
-		mesh.materialSlotIndicies = { 0 };
-
-		_renderer->addRawToQueue(mesh, materialList, mpvTransform, transform);
-	}
-
-	void renderQuad(Material mat, Bounds2D bounds, Bounds2D texbounds)
-	{
 		Window currentWindow = getCurrentWindow();
 
-		bounds.x /= getWidth(currentWindow);
-		bounds.y /= getHeight(currentWindow);
-		bounds.w /= getWidth(currentWindow);
-		bounds.h /= getHeight(currentWindow);
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
 
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
 		CompiledMeshData mesh = {};
 		mesh.vertexData = {
-			bounds.x,            1.0f - bounds.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			bounds.x + bounds.w, 1.0f - bounds.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			bounds.x,            1.0f - bounds.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			-origin.x,            origin.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-origin.x + bounds.w, origin.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-origin.x + bounds.w, origin.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-origin.x,            origin.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
+		
+		// Rotate the transform around the axis that goes into the screen (Z)
 
 		glm::mat4x4 transform = glm::mat4x4(
-			 2.0f,  0.0f, 0.0f, 0.0f,
-			 0.0f,  2.0f, 0.0f, 0.0f,
-			 0.0f,  0.0f, 1.0f, 0.0f,
-			-1.0f, -1.0f, 0.0f, 1.0f
+			 cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
+			 sinf(angle) * xScale,  cosf(angle) * yScale, 0.0f, 0.0f,
+			 0.0f,                  0.0f,                 1.0f, 0.0f,
+			-1.0f,                  1.0f,                 0.0f, 1.0f
 		);
-		// glm::translate(glm::scale(glm::identity<glm::mat4x4>(), glm::vec3(bounds.x, bounds.y, 0.0f)), glm::vec3(bounds.w, bounds.h, 1.0f));
 
+		transform[3][0] += bounds.x * xScale;
+		transform[3][1] -= bounds.y * yScale;
+		
 		std::vector<Material> materialList = { mat };
 
 		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
 	}
 
-	void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds)
+	void renderQuad3D(Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds, Material mat)
 	{
+		// If no material is given use the default one
+		if (mat == nullptr) mat = getDefaultWhiteMaterial();
+
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
@@ -950,6 +902,108 @@ namespace lost
 		};
 		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
 		mesh.materialSlotIndicies = { 0 };
+
+		glm::mat4x4 transform = glm::eulerAngleXYZ(glm::radians(rotation.x), glm::radians(rotation.y), glm::radians(rotation.z));
+		transform[3][0] += position.x;
+		transform[3][1] += position.y;
+		transform[3][2] += position.z;
+
+		glm::mat4x4 mpvTransform = _getCurrentCamera()->getPV() * transform;
+
+		std::vector<Material> materialList = { mat };
+
+		_renderer->addRawToQueue(mesh, materialList, mpvTransform, transform);
+	}
+
+	void renderCircle(Vec2 position, float radius, Material mat, int detail)
+	{
+		renderEllipsePro(position, { radius, radius }, { 0.0f, 0.0f }, 0.0f, mat, detail);
+	}
+
+	void renderCircle3D(Vec3 position, float radius, Vec3 rotation, Material mat, int detail)
+	{
+		renderEllipse3D(position, { radius, radius }, rotation, mat, detail);
+	}
+
+	void renderEllipse(Vec2 position, Vec2 extents, Material mat, int detail)
+	{
+		renderEllipsePro(position, extents, { 0.0f, 0.0f }, 0.0f, mat, detail);
+	}
+
+	void renderEllipsePro(Vec2 position, Vec2 extents, Vec2 origin, float angle, Material mat, int detail)
+	{
+		// If no material is given use the default one
+		if (mat == nullptr) mat = getDefaultWhiteMaterial();
+
+		Window currentWindow = getCurrentWindow();
+
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
+		CompiledMeshData mesh = {};
+
+		// Generate polygon
+		for (int i = 0; i < detail; i++)
+		{
+			float theta = -(float)i / (float)detail * TAU;
+			Vec2 pos = { sinf(theta) * extents.x - origin.x, cosf(theta) * extents.y - origin.y };
+			Vec2 texCoord = { sinf(theta) * 0.5f + 0.5f, cosf(theta) * 0.5f + 0.5f };
+
+			mesh.vertexData.insert(mesh.vertexData.end(), {
+				pos.x, pos.y, 0.0f, texCoord.x, texCoord.y, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			});
+
+			mesh.indexData.push_back(i);
+		}
+
+		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_TRIANGLE_FAN;
+
+		glm::mat4x4 transform = glm::mat4x4(
+			 cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
+			 sinf(angle) * xScale,  cosf(angle) * yScale, 0.0f, 0.0f,
+			 0.0f,                  0.0f,                 1.0f, 0.0f,
+			-1.0f,                  1.0f,                 0.0f, 1.0f
+		);
+
+		transform[3][0] += position.x * xScale;
+		transform[3][1] -= position.y * yScale;
+
+		std::vector<Material> materialList = { mat };
+
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+	}
+
+	void renderEllipse3D(Vec3 position, Vec2 extents, Vec3 rotation, Material mat, int detail)
+	{
+		// If no material is given use the default one
+		if (mat == nullptr) mat = getDefaultWhiteMaterial();
+
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+		
+		CompiledMeshData mesh = {};
+
+		// Generate polygon
+		for (int i = 0; i < detail; i++)
+		{
+			float theta = -(float)i / (float)detail * TAU;
+			Vec2 pos = { sinf(theta) * extents.x, cosf(theta) * extents.y };
+			Vec2 texCoord = { sinf(theta) * 0.5f + 0.5f, cosf(theta) * 0.5f + 0.5f };
+
+			mesh.vertexData.insert(mesh.vertexData.end(), {
+				pos.x, pos.y, 0.0f, texCoord.x, texCoord.y, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			});
+
+			mesh.indexData.push_back(i);
+		}
+
+		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_TRIANGLE_FAN;
 
 		glm::mat4x4 transform = glm::eulerAngleXYZ(glm::radians(rotation.x), glm::radians(rotation.y), glm::radians(rotation.z));
 		transform[3][0] += position.x;
@@ -978,7 +1032,7 @@ namespace lost
 		if (bounds.w == -1.0f) bounds.w = texture->getWidth();
 		if (bounds.h == -1.0f) bounds.h = texture->getHeight();
 
-		renderQuad(texture->getMaterial(), bounds, texBounds);
+		renderRect(bounds, texBounds, texture->getMaterial());
 	}
 
 	void renderTexture(Texture texture, float x, float y, float w, float h)
@@ -986,7 +1040,7 @@ namespace lost
 		if (w == -1.0f) w = texture->getWidth();
 		if (h == -1.0f) h = texture->getHeight();
 
-		renderQuad(texture->getMaterial(), { x, y, w, h }, { 0.0f, 0.0f, 1.0f, 1.0f });
+		renderRect({ x, y, w, h }, { 0.0f, 0.0f, 1.0f, 1.0f }, texture->getMaterial());
 	}
 
 	void renderInstanceQueue()
@@ -1073,7 +1127,7 @@ namespace lost
 
 	void endMesh()
 	{
-		endMesh(lost::_getDefaultWhiteMaterial());
+		endMesh(lost::getDefaultWhiteMaterial());
 	}
 
 	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord)

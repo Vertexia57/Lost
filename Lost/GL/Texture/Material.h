@@ -73,7 +73,7 @@ namespace lost
 		unsigned int location = -1;
 
 		void* data = nullptr; // Pointer of data
-		unsigned int type = LOST_ERROR; // Data type of the data
+		unsigned int type = LOST_TYPE_ERROR; // Data type of the data
 	};
 
 	class _Material
@@ -134,8 +134,6 @@ namespace lost
 
 	// A reference to a material
 	typedef _Material* Material;
-
-	// [!] TODO: Documentation
 	
 	/// <summary>
 	/// Will set a value in the material which when the material is used will set a uniform in the shader
@@ -144,6 +142,6 @@ namespace lost
 	/// <param name="mat">The material to apply to</param>
 	/// <param name="uniformName">The name of the uniform within the shader</param>
 	/// <param name="data">The address of the data given (cast to void*)</param>
-	/// <param name="dataType">The data type following LOST_xxxx where x is the type</param>
+	/// <param name="dataType">The data type following LOST_TYPE_xxxx where x is the type</param>
 	void setMaterialUniform(Material mat, const char* uniformName, const void* data, unsigned int dataType);
 }

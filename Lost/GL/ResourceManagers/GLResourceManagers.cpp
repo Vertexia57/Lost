@@ -249,7 +249,7 @@ namespace lost
 
 					// Load the textures
 					textureList = { 
-						diffuseImageLocation.empty()  ? lost::_getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str()),
+						diffuseImageLocation.empty()  ? lost::getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str()),
 					};
 
 					Material mat = lost::makeMaterial(textureList, materialName.c_str(), lost::_defaultShader);
@@ -279,7 +279,7 @@ namespace lost
 
 			// Load the textures
 			textureList = {
-				diffuseImageLocation.empty()  ? lost::_getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str())
+				diffuseImageLocation.empty()  ? lost::getDefaultWhiteTexture() : lost::loadTexture(diffuseImageLocation.c_str())
 			};
 
 			Material mat = lost::makeMaterial(textureList, materialName.c_str(), lost::_defaultShader);

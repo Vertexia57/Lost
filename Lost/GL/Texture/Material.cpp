@@ -2,23 +2,25 @@
 #include <glad/glad.h>
 #include <iostream>
 
+#include "../LostGL.h"
+
 namespace lost
 {
 	static size_t getBytesForType(unsigned int dataType)
 	{
 		switch (dataType)
 		{
-		case LOST_FLOAT:
-		case LOST_INT:
+		case LOST_TYPE_FLOAT:
+		case LOST_TYPE_INT:
 			return 1 * sizeof(float);
-		case LOST_VEC2:
-		case LOST_IVEC2:
+		case LOST_TYPE_VEC2:
+		case LOST_TYPE_IVEC2:
 			return 2 * sizeof(float);
-		case LOST_VEC3:
-		case LOST_IVEC3:
+		case LOST_TYPE_VEC3:
+		case LOST_TYPE_IVEC3:
 			return 3 * sizeof(float);
-		case LOST_VEC4:
-		case LOST_IVEC4:
+		case LOST_TYPE_VEC4:
+		case LOST_TYPE_IVEC4:
 			return 4 * sizeof(float);
 		default:
 			return 0;
@@ -28,13 +30,17 @@ namespace lost
 	_Material::_Material(Shader shader, std::vector<Texture> textures, unsigned int renderQueue)
 	{
 		m_Shader = shader;
-		m_Textures.resize(m_Shader->getTextureNameMap().size());
+		m_Textures.clear();
+		m_Textures.reserve(m_Shader->getTextureNameMap().size());
 		m_QueueLevel = renderQueue;
 
 		if (!textures.empty())
 		{
-			m_Textures.erase(m_Textures.begin(), m_Textures.begin() + textures.size());
 			m_Textures.insert(m_Textures.begin(), textures.begin(), textures.end());
+			if (textures.size() < m_Shader->getTextureNameMap().size())
+			{
+				m_Textures.insert(m_Textures.end(), m_Shader->getTextureNameMap().size() - textures.size(), getDefaultWhiteTexture());
+			}
 		}
 	}
 

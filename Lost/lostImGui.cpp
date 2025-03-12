@@ -856,13 +856,16 @@ namespace lost
 #pragma region MaterialTextures
 
 				ImGui::Text("Texture Inputs:");
+				ImGui::SameLine();
+				ImGui::TextDisabled("(?)");
+				ImGui::SetItemTooltip("In alphabetical order (UTF-8, lowest to highest)");
 				// Loop over the texture slots of the shader
 				ImVec2 hoverToolTipSize = { 300.0f, 300.0f };
 
 				const std::map<std::string, unsigned int>& shaderTextureNameMap = it->second.data->getShader()->getTextureNameMap();
 				for (typename std::map<std::string, unsigned int>::const_iterator shaderIt = shaderTextureNameMap.begin(); shaderIt != shaderTextureNameMap.end(); shaderIt++)
 				{
-					ImGui::BulletText("%s:", shaderIt->first.c_str());
+					ImGui::BulletText("(%i) %s:", shaderIt->second, shaderIt->first.c_str());
 					ImGui::SameLine();
 					const char* textureID = lost::_getTextureID(it->second.data->getTexture(shaderIt->first.c_str()));
 					if (textureID != nullptr)
@@ -908,40 +911,40 @@ namespace lost
 						ImGui::PushID(uniform.uniformID.c_str());
 						switch (uniform.type)
 						{
-						case LOST_FLOAT:
+						case LOST_TYPE_FLOAT:
 							ImGui::DragFloat("##set", (float*)uniform.data, 0.1f);
 							break;
-						case LOST_VEC2:
+						case LOST_TYPE_VEC2:
 							ImGui::DragFloat2("##set", (float*)uniform.data, 0.1f);
 							break;
-						case LOST_VEC3:
+						case LOST_TYPE_VEC3:
 							ImGui::DragFloat3("##set", (float*)uniform.data, 0.1f);
 							break;
-						case LOST_VEC4:
+						case LOST_TYPE_VEC4:
 							ImGui::DragFloat4("##set", (float*)uniform.data, 0.1f);
 							break;
-						case LOST_INT:
+						case LOST_TYPE_INT:
 							ImGui::DragInt("##set", (int*)uniform.data);
 							break;
-						case LOST_IVEC2:
+						case LOST_TYPE_IVEC2:
 							ImGui::DragInt2("##set", (int*)uniform.data);
 							break;
-						case LOST_IVEC3:
+						case LOST_TYPE_IVEC3:
 							ImGui::DragInt3("##set", (int*)uniform.data);
 							break;
-						case LOST_IVEC4:
+						case LOST_TYPE_IVEC4:
 							ImGui::DragInt4("##set", (int*)uniform.data);
 							break;
-						case LOST_UINT:
+						case LOST_TYPE_UINT:
 							ImGui::DragInt("##set", (int*)(uniform.data), 1.0f, 0);
 							break;
-						case LOST_UVEC2:
+						case LOST_TYPE_UVEC2:
 							ImGui::DragInt2("##set", (int*)(uniform.data), 1.0f, 0);
 							break;
-						case LOST_UVEC3:
+						case LOST_TYPE_UVEC3:
 							ImGui::DragInt3("##set", (int*)(uniform.data), 1.0f, 0);
 							break;
-						case LOST_UVEC4:
+						case LOST_TYPE_UVEC4:
 							ImGui::DragInt4("##set", (int*)(uniform.data), 1.0f, 0);
 							break;
 						//case LOST_DOUBLE:
@@ -956,19 +959,19 @@ namespace lost
 						//case LOST_DVEC4:
 						//	ImGui::DragFloat4("##set", (float*)uniform.data, 0.1f);
 						//	break;
-						case LOST_BOOL:
+						case LOST_TYPE_BOOL:
 							ImGui::Checkbox("##setA", (bool*)uniform.data);
 							break;
-						case LOST_BVEC2:
+						case LOST_TYPE_BVEC2:
 							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
 							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool));
 							break;
-						case LOST_BVEC3:
+						case LOST_TYPE_BVEC3:
 							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
 							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
 							ImGui::Checkbox("##setC", (bool*)uniform.data + 2 * sizeof(float) / sizeof(bool));
 							break;
-						case LOST_BVEC4:
+						case LOST_TYPE_BVEC4:
 							ImGui::Checkbox("##setA", (bool*)uniform.data); ImGui::SameLine();
 							ImGui::Checkbox("##setB", (bool*)uniform.data + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
 							ImGui::Checkbox("##setC", (bool*)uniform.data + 2 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
@@ -997,7 +1000,7 @@ namespace lost
 
 							ImGui::BulletText("Type:");
 							ImGui::SameLine();
-							if (uniform.type != LOST_STRUCT)
+							if (uniform.type != LOST_TYPE_STRUCT)
 								ImGui::TextColored(ImColor(135, 191, 255, 255), _UniformIDName.at(uniform.type).c_str());
 							else
 							{
@@ -1499,22 +1502,22 @@ namespace lost
 						{
 							switch ((*uniformList.at(*currentItem)).type)
 							{
-							case LOST_FLOAT:
-							case LOST_VEC2:
-							case LOST_VEC3:
-							case LOST_VEC4:
+							case LOST_TYPE_FLOAT:
+							case LOST_TYPE_VEC2:
+							case LOST_TYPE_VEC3:
+							case LOST_TYPE_VEC4:
 								glGetUniformfv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->fv);
 								break;
-							case LOST_INT:
-							case LOST_IVEC2:
-							case LOST_IVEC3:
-							case LOST_IVEC4:
+							case LOST_TYPE_INT:
+							case LOST_TYPE_IVEC2:
+							case LOST_TYPE_IVEC3:
+							case LOST_TYPE_IVEC4:
 								glGetUniformiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->iv);
 								break;
-							case LOST_UINT:
-							case LOST_UVEC2:
-							case LOST_UVEC3:
-							case LOST_UVEC4:
+							case LOST_TYPE_UINT:
+							case LOST_TYPE_UVEC2:
+							case LOST_TYPE_UVEC3:
+							case LOST_TYPE_UVEC4:
 								glGetUniformuiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, selection->uiv);
 								break;
 							//case LOST_DOUBLE:
@@ -1523,10 +1526,10 @@ namespace lost
 							//case LOST_DVEC4:
 							//	glGetUniformdv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location, selection->dv);
 							//	break;
-							case LOST_BOOL:
-							case LOST_BVEC2:
-							case LOST_BVEC3:
-							case LOST_BVEC4:
+							case LOST_TYPE_BOOL:
+							case LOST_TYPE_BVEC2:
+							case LOST_TYPE_BVEC3:
+							case LOST_TYPE_BVEC4:
 								glGetUniformiv(it->second.data->getShaderID(), (*uniformList.at(*currentItem)).location + selection->offset, (int*)selection->bv);
 								break;
 							default:
@@ -1538,40 +1541,40 @@ namespace lost
 
 						switch ((*uniformList.at(*currentItem)).type)
 						{
-						case LOST_FLOAT:
+						case LOST_TYPE_FLOAT:
 							change = ImGui::DragFloat("##set", selection->fv, 0.1f);
 							break;
-						case LOST_VEC2:
+						case LOST_TYPE_VEC2:
 							change = ImGui::DragFloat2("##set", selection->fv, 0.1f);
 							break;
-						case LOST_VEC3:
+						case LOST_TYPE_VEC3:
 							change = ImGui::DragFloat3("##set", selection->fv, 0.1f);
 							break;
-						case LOST_VEC4:
+						case LOST_TYPE_VEC4:
 							change = ImGui::DragFloat4("##set", selection->fv, 0.1f);
 							break;
-						case LOST_INT:
+						case LOST_TYPE_INT:
 							change = ImGui::DragInt("##set", selection->iv);
 							break;
-						case LOST_IVEC2:
+						case LOST_TYPE_IVEC2:
 							change = ImGui::DragInt2("##set", selection->iv);
 							break;
-						case LOST_IVEC3:
+						case LOST_TYPE_IVEC3:
 							change = ImGui::DragInt3("##set", selection->iv);
 							break;
-						case LOST_IVEC4:
+						case LOST_TYPE_IVEC4:
 							change = ImGui::DragInt4("##set", selection->iv);
 							break;
-						case LOST_UINT:
+						case LOST_TYPE_UINT:
 							change = ImGui::DragInt("##set", (int*)(selection->uiv), 1.0f, 0);
 							break;
-						case LOST_UVEC2:
+						case LOST_TYPE_UVEC2:
 							change = ImGui::DragInt2("##set", (int*)(selection->uiv), 1.0f, 0);
 							break;
-						case LOST_UVEC3:
+						case LOST_TYPE_UVEC3:
 							change = ImGui::DragInt3("##set", (int*)(selection->uiv), 1.0f, 0);
 							break;
-						case LOST_UVEC4:
+						case LOST_TYPE_UVEC4:
 							change = ImGui::DragInt4("##set", (int*)(selection->uiv), 1.0f, 0);
 							break;
 						//case LOST_DOUBLE:
@@ -1586,19 +1589,19 @@ namespace lost
 						//case LOST_DVEC4:
 						//	change = ImGui::DragFloat4("##set", selection->fv, 0.1f);
 						//	break;
-						case LOST_BOOL:
+						case LOST_TYPE_BOOL:
 							change = ImGui::Checkbox("##setA", selection->bv);
 							break;
-						case LOST_BVEC2:
+						case LOST_TYPE_BVEC2:
 							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
 							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool));
 							break;
-						case LOST_BVEC3:
+						case LOST_TYPE_BVEC3:
 							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
 							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
 							change = change || ImGui::Checkbox("##setC", selection->bv + 2 * sizeof(float) / sizeof(bool));
 							break;
-						case LOST_BVEC4:
+						case LOST_TYPE_BVEC4:
 							change = ImGui::Checkbox("##setA", selection->bv); ImGui::SameLine();
 							change = change || ImGui::Checkbox("##setB", selection->bv + 1 * sizeof(float) / sizeof(bool)); ImGui::SameLine();
 							change = change || ImGui::Checkbox("##setC", selection->bv + 2 * sizeof(float) / sizeof(bool)); ImGui::SameLine();

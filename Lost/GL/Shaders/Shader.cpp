@@ -150,7 +150,7 @@ namespace lost
 					std::string uniformName = uniformData.back();
 					// Get the type and convert it to the associated enum, unknown values are considered structs (including errors)
 					std::string uniformTypename = uniformData.at(uniformData.size() - 2);
-					unsigned int uniformType = _UniformNameIDMap.count(uniformTypename) ? _UniformNameIDMap.at(uniformTypename) : LOST_STRUCT;
+					unsigned int uniformType = _UniformNameIDMap.count(uniformTypename) ? _UniformNameIDMap.at(uniformTypename) : LOST_TYPE_STRUCT;
 
 					m_UniformMap[uniformName] = UniformData{ 
 						(unsigned int)glGetUniformLocation(m_ShaderID, uniformName.c_str()), 
@@ -249,7 +249,7 @@ namespace lost
 	unsigned int _Shader::getUniformType(const char* uniformName)
 	{
 		if (m_UniformMap.count(uniformName) != 0)
-			return LOST_ERROR; 
+			return LOST_TYPE_ERROR; 
 
 		return m_UniformMap[uniformName].type;
 	}
@@ -283,53 +283,53 @@ namespace lost
 
 		switch (m_UniformMap[uniformName].type)
 		{
-		case LOST_FLOAT:
+		case LOST_TYPE_FLOAT:
 			glUniform1fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC2:
+		case LOST_TYPE_VEC2:
 			glUniform2fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC3:
+		case LOST_TYPE_VEC3:
 			glUniform3fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC4:
+		case LOST_TYPE_VEC4:
 			glUniform4fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_INT:
+		case LOST_TYPE_INT:
 			glUniform1iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC2:
+		case LOST_TYPE_IVEC2:
 			glUniform2iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC3:
+		case LOST_TYPE_IVEC3:
 			glUniform3iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC4:
+		case LOST_TYPE_IVEC4:
 			glUniform4iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_UINT:
+		case LOST_TYPE_UINT:
 			glUniform1uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC2:
+		case LOST_TYPE_UVEC2:
 			glUniform2uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC3:
+		case LOST_TYPE_UVEC3:
 			glUniform3uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC4:
+		case LOST_TYPE_UVEC4:
 			glUniform4uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
 			// [!] TODO: Doubles
-		case LOST_BOOL:
+		case LOST_TYPE_BOOL:
 			glUniform1iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC2:
+		case LOST_TYPE_BVEC2:
 			glUniform2iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC3:
+		case LOST_TYPE_BVEC3:
 			glUniform3iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC4:
+		case LOST_TYPE_BVEC4:
 			glUniform4iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
 		default:
@@ -355,53 +355,53 @@ namespace lost
 
 		switch (type)
 		{
-		case LOST_FLOAT:
+		case LOST_TYPE_FLOAT:
 			glUniform1fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC2:
+		case LOST_TYPE_VEC2:
 			glUniform2fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC3:
+		case LOST_TYPE_VEC3:
 			glUniform3fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_VEC4:
+		case LOST_TYPE_VEC4:
 			glUniform4fv(uniformLoc + offset, count, (float*)dataAt);
 			break;
-		case LOST_INT:
+		case LOST_TYPE_INT:
 			glUniform1iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC2:
+		case LOST_TYPE_IVEC2:
 			glUniform2iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC3:
+		case LOST_TYPE_IVEC3:
 			glUniform3iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_IVEC4:
+		case LOST_TYPE_IVEC4:
 			glUniform4iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_UINT:
+		case LOST_TYPE_UINT:
 			glUniform1uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC2:
+		case LOST_TYPE_UVEC2:
 			glUniform2uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC3:
+		case LOST_TYPE_UVEC3:
 			glUniform3uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
-		case LOST_UVEC4:
+		case LOST_TYPE_UVEC4:
 			glUniform4uiv(uniformLoc + offset, count, (unsigned int*)dataAt);
 			break;
 			// [!] TODO: Doubles
-		case LOST_BOOL:
+		case LOST_TYPE_BOOL:
 			glUniform1iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC2:
+		case LOST_TYPE_BVEC2:
 			glUniform2iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC3:
+		case LOST_TYPE_BVEC3:
 			glUniform3iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
-		case LOST_BVEC4:
+		case LOST_TYPE_BVEC4:
 			glUniform4iv(uniformLoc + offset, count, (int*)dataAt);
 			break;
 		default:

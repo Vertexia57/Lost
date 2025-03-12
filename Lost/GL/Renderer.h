@@ -101,14 +101,26 @@ namespace lost
 	// Depending on the current render mode of the renderer, renders the mesh given to the screen using the position and scale given
 	void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
 
-	// Renders a rect to the screen, this can use batching unlike renderQuad
-	void renderRect(Material mat, Bounds2D bounds);
-	// Renders a rect in 3D space, taking in a 3D position, size and rotation, can use batching unlike renderQuad3D
-	void renderRect3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f });
 	// Renders a quad to the screen not caring for perspective or view, (Cannot use batching)
-	void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
+	void renderRect(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
+	// Renders a quad to the screen not caring for perspective or view, (Cannot use batching), allows for rotation
+	void renderRectPro(Bounds2D bounds, Vec2 origin, float angle, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
 	// Renders a quad in 3D space, taking in a 3D position, size and rotation and texture bounds (Cannot use batching)
-	void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
+	void renderRect3D(Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
+
+	// [!] TODO: Version of renderRect which explicitly says it doesn't do colors or texBounds (Allows for instancing)
+
+	// Renders a circle to the screen, detail is the amount of segments the polygon will have
+	void renderCircle(Vec2 position, float radius, Material mat = nullptr, int detail = 30);
+	// Renders a circle in 3D space, detail is the amount of segments the polygon will have
+	void renderCircle3D(Vec3 position, float radius, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Material mat = nullptr, int detail = 30);
+
+	// Renders a ellipse to the screen, detail is the amount of segments the polygon will have
+	void renderEllipse(Vec2 position, Vec2 extents, Material mat = nullptr, int detail = 30);
+	// Renders a ellipse to the screen, detail is the amount of segments the polygon will have
+	void renderEllipsePro(Vec2 position, Vec2 extents, Vec2 origin, float angle, Material mat = nullptr, int detail = 30);
+	// Renders a ellipse in 3D space, detail is the amount of segments the polygon will have
+	void renderEllipse3D(Vec3 position, Vec2 extents, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Material mat = nullptr, int detail = 30);
 
 	// Renders the texture to the screen using the default shader, bounds is the area of the screen it renders to and texBounds is the area on the texture it will use in pixels, by default rendering the whole texture
 	void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });

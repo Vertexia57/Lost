@@ -2,6 +2,16 @@
 #include <math.h>
 #include "glm/glm.hpp"
 
+#ifndef PI
+#define PI 3.141592653589
+#endif
+#ifndef TWO_PI
+#define TWO_PI 6.28318530717958
+#endif
+#ifndef TAU
+#define TAU 6.28318530717958
+#endif
+
 namespace lost
 {
 
