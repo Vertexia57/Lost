@@ -174,7 +174,7 @@ namespace lost
 					Glyph& glyph = font->glyphs[text[i]];
 
 					// Render textured rect of char
-					lost::renderQuad(
+					lost::renderRect(
 						{ pos.x - glyph.offset.x, pos.y - glyph.offset.y, (float)glyph.size.x, (float)glyph.size.y },
 						{ (float)glyph.textureCoords.x / font->textureSize, (float)glyph.textureCoords.y / font->textureSize, (float)glyph.size.x / font->textureSize, (float)glyph.size.y / font->textureSize },
 						font->fontMaterial

@@ -884,7 +884,7 @@ namespace lost
 		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
 	}
 
-	void renderQuad3D(Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds, Material mat)
+	void renderRect3D(Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds, Material mat)
 	{
 		// If no material is given use the default one
 		if (mat == nullptr) mat = getDefaultWhiteMaterial();
