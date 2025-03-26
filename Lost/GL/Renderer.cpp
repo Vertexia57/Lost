@@ -92,12 +92,82 @@ namespace lost
 	void Renderer::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite)
 	{
 	}
+
 	void Renderer::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite)
 	{
+
+		// Compare this raw mesh to the last one to see if it can be instanced
+		if (m_RawMeshInstance != nullptr && meshData.materialSlotIndicies.size() == 1) // Check if there was a last mesh, only batch if there is one material
+		{
+			if (m_RawMeshInstance->meshRenderMode == meshData.meshRenderMode && ( // Make sure render modes are the same
+				meshData.meshRenderMode == LOST_MESH_LINES       // <-
+			 || meshData.meshRenderMode == LOST_MESH_POINTS      //  |- Instancing raw meshes only works with these render types 
+			 || meshData.meshRenderMode == LOST_MESH_TRIANGLES)) // <-
+			{
+				// Nested to save on operating time as this comparator does quite a bit
+				if (m_RawMeshBuffer == RawMeshBuffer{ materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite })
+				{
+					// Mesh can be instanced
+					
+					// Append the instanced mesh data to the first one
+					m_RawMeshInstance->vertexData.insert(m_RawMeshInstance->vertexData.end(), meshData.vertexData.begin(), meshData.vertexData.end());
+
+
+					// We need to offset the index data and material index data to fit 
+					int offset = m_RawMeshInstance->indexData.size();
+
+					// Index data
+					m_RawMeshInstance->indexData.reserve(offset + meshData.indexData.size()); // Save memory reallocations
+					for (int index : meshData.indexData)
+						m_RawMeshInstance->indexData.push_back(index + offset); // Account for offset
+
+					// Materials are ignored, this only works if there is one material.
+					// [?] Maybe do this?
+
+					return; // Escape, there's no point going further
+				}
+			}
+
+			// Add raw queue to render queue
+			// We only do this if this wasn't a match to the last raw mesh rendered
+
+			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite);
+		}
+
+		// This code is only ran when a new mesh needs to be created.
+		// The test for instancing and the add for it breaks out of this function once it's finished
+
+		// Create raw mesh on the heap to store it for later, creates a lot of memory allocations
+		CompiledMeshData* newMesh = new CompiledMeshData{
+			meshData.vertexData,
+			meshData.materialSlotIndicies,
+			meshData.indexData,
+			meshData.meshRenderMode
+		};
+
+		m_RawMeshes.push_back(newMesh);
+
+		m_RawMeshInstance = newMesh;
+		m_RawMeshBuffer = RawMeshBuffer{ materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite };
 	}
+
+	void Renderer::initRenderInstanceQueue()
+	{
+		if (m_RawMeshInstance) // Add the last rendered raw mesh
+			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite);
+	}
+
+	// Ran at the end of every renderer's renderInstanceQueue function
 	void Renderer::renderInstanceQueue()
 	{
+		for (CompiledMeshData* mesh : m_RawMeshes)
+			delete mesh;
+		m_RawMeshes.clear();
+
+		// Reset the raw mesh instance
+		m_RawMeshInstance = nullptr;
 	}
+
 	void Renderer::renderMesh(Mesh mesh, glm::mat4x4& transform)
 	{
 	}
@@ -350,7 +420,7 @@ namespace lost
 			m_CurrentMeshID = nullptr;
 		}
 
-		m_RawMeshes.clear();
+		Renderer::renderInstanceQueue();
 	}
 
 	void Renderer2D::finalize()
@@ -451,24 +521,13 @@ namespace lost
 		}
 
 		// Active during LOST_RENDER_MODE_QUEUE and LOST_RENDER_MODE_AUTO_QUEUE
-		// Fulfils the rule of "A non identical mesh is rendered
-	}
-
-	void Renderer3D::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite)
-	{
-		CompiledMeshData* newMesh = new CompiledMeshData{
-			meshData.vertexData,
-			meshData.materialSlotIndicies,
-			meshData.indexData,
-			meshData.meshRenderMode
-		};
-		m_RawMeshes.push_back(newMesh);
-
-		addMeshToQueue(newMesh, materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite);
+		// Fulfils the rule of "A non identical mesh is rendered"
 	}
 
 	void Renderer3D::renderInstanceQueue()
 	{
+		initRenderInstanceQueue();
+
 		if (!m_MainRenderData.empty())
 		{
 			// Needs to be stable to preserve the order of depth tested meshes
@@ -637,9 +696,7 @@ namespace lost
 
 		m_MainRenderData.clear();
 
-		for (CompiledMeshData* mesh : m_RawMeshes)
-			delete mesh;
-		m_RawMeshes.clear();
+		Renderer::renderInstanceQueue();
 	}
 
 	void Renderer3D::finalize()
@@ -857,27 +914,57 @@ namespace lost
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
+		// [!] TODO: Remove the transform, just use the basic transform so that instancing works on it
+
+		const lost::Vec2 reusedCornerA = lost::Vec2{ -(origin.x * cosf(angle) + origin.y * sinf(angle)) + bounds.x, origin.x * -sinf(angle) + origin.y * cosf(angle) + bounds.y };
+		const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w) * cosf(angle) + (origin.y - bounds.h) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y - bounds.h) * cosf(angle) + bounds.y };
+
 		CompiledMeshData mesh = {};
 		mesh.vertexData = {
-			-origin.x,            origin.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-origin.x + bounds.w, origin.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-origin.x + bounds.w, origin.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-origin.x,            origin.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-((origin.x - bounds.w) * cosf(angle) + (origin.y) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y) * cosf(angle) + bounds.y, 0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-((origin.x) * cosf(angle) + (origin.y - bounds.h) * sinf(angle)) + bounds.x, (origin.x) * -sinf(angle) + (origin.y - bounds.h) * cosf(angle) + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
-		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
+		mesh.indexData = { 2, 1, 0, 5, 4, 3 };
 		mesh.materialSlotIndicies = { 0 };
-		
+		mesh.meshRenderMode = LOST_MESH_TRIANGLES;
+
 		// Rotate the transform around the axis that goes into the screen (Z)
 
 		glm::mat4x4 transform = glm::mat4x4(
-			 cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
-			 sinf(angle) * xScale,  cosf(angle) * yScale, 0.0f, 0.0f,
-			 0.0f,                  0.0f,                 1.0f, 0.0f,
-			-1.0f,                  1.0f,                 0.0f, 1.0f
+			 xScale,  0.0f,   0.0f, 0.0f,
+			 0.0f,   -yScale, 0.0f, 0.0f,
+			 0.0f,    0.0f,   1.0f, 0.0f,
+			-1.0f,    1.0f,   0.0f, 1.0f
 		);
 
-		transform[3][0] += bounds.x * xScale;
-		transform[3][1] -= bounds.y * yScale;
+		//CompiledMeshData mesh = {};
+		//mesh.vertexData = {
+		//	-origin.x,            origin.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		//	-origin.x + bounds.w, origin.y,            0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		//	-origin.x + bounds.w, origin.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		//	-origin.x + bounds.w, origin.y - bounds.h, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		//	-origin.x,            origin.y - bounds.h, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		//	-origin.x,            origin.y,            0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+		//};
+		//mesh.indexData = { 2, 1, 0, 5, 4, 3 };
+		//mesh.materialSlotIndicies = { 0 };
+		//mesh.meshRenderMode = LOST_MESH_TRIANGLES;
+		//
+		//// Rotate the transform around the axis that goes into the screen (Z)
+
+		//glm::mat4x4 transform = glm::mat4x4(
+		//	 cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
+		//	 sinf(angle) * xScale,  cosf(angle) * yScale, 0.0f, 0.0f,
+		//	 0.0f,                  0.0f,                 1.0f, 0.0f,
+		//	-1.0f,                  1.0f,                 0.0f, 1.0f
+		//);
+
+		//transform[3][0] += bounds.x * xScale;
+		//transform[3][1] -= bounds.y * yScale;
 		
 		std::vector<Material> materialList = { mat };
 
@@ -900,8 +987,9 @@ namespace lost
 			size.x, size.y, 0.0f, texBounds.x + texBounds.w, texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 			0.0f,   size.y, 0.0f, texBounds.x,               texBounds.y + texBounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
-		mesh.indexData = { 0, 2, 1, 2, 0, 3 };
+		mesh.indexData = { 2, 1, 3, 0 };
 		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_TRIANGLE_STRIP;
 
 		glm::mat4x4 transform = glm::eulerAngleXYZ(glm::radians(rotation.x), glm::radians(rotation.y), glm::radians(rotation.z));
 		transform[3][0] += position.x;

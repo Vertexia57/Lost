@@ -5,6 +5,8 @@
 #include "RenderPass.h"
 #include "Structs.h" 
 
+// [!] TODO: Make addRawMeshToQueue() use batching, by making a queue of verticies that is pushed once there is a material change
+
 enum RenderMode2D
 {
 	// Renders every mesh to the frame buffer instantly, no queue
@@ -101,14 +103,14 @@ namespace lost
 	// Depending on the current render mode of the renderer, renders the mesh given to the screen using the position and scale given
 	void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
 
-	// Renders a quad to the screen not caring for perspective or view, (Cannot use batching)
+	// Renders a quad to the screen not caring for perspective or view
 	void renderRect(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
-	// Renders a quad to the screen not caring for perspective or view, (Cannot use batching), allows for rotation
+	// Renders a quad to the screen not caring for perspective or view, allows for rotation
 	void renderRectPro(Bounds2D bounds, Vec2 origin, float angle, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
 	// Renders a quad in 3D space, taking in a 3D position, size and rotation and texture bounds (Cannot use batching)
 	void renderRect3D(Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
 
-	// [!] TODO: Version of renderRect which explicitly says it doesn't do colors or texBounds (Allows for instancing)
+	// [!] TODO: renderRectPro3D()
 
 	// Renders a circle to the screen, detail is the amount of segments the polygon will have
 	void renderCircle(Vec2 position, float radius, Material mat = nullptr, int detail = 30);
@@ -175,6 +177,36 @@ namespace lost
 
 	class Renderer
 	{
+	protected:
+		struct RawMeshBuffer
+		{
+			std::vector<Material> materials;
+			glm::mat4x4 mvpTransform;
+			glm::mat4x4 modelTransform;
+			unsigned int depthTestFuncOverride;
+			bool depthWrite;
+
+			bool operator==(const RawMeshBuffer& rhs) const
+			{
+				// Check if the material array is the same
+				if (materials.size() != rhs.materials.size())
+					return false;
+
+				for (int i = 0; i < materials.size(); i++)
+				{
+					if (materials.at(i) != rhs.materials.at(i))
+						return false;
+				}
+
+				// Compare transforms, we will only compare the MVP transform
+				// [?] Comparing the model transform may be important too, as the MVP may be the same but the model different
+				if (mvpTransform != rhs.mvpTransform)
+					return false;
+
+				// Compare depth settings
+				return (depthTestFuncOverride == rhs.depthTestFuncOverride || depthWrite == rhs.depthWrite);
+			}
+		};
 	public:
 		Renderer();
 		virtual ~Renderer();
@@ -199,6 +231,7 @@ namespace lost
 		// Adds a mesh to the image queue and renders it if the conditions are met
 		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
 
+		virtual void initRenderInstanceQueue();
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();
 
@@ -253,6 +286,9 @@ namespace lost
 		unsigned int m_RenderMode = LOST_RENDER_MODE_AUTO_QUEUE;
 		unsigned int m_CullMode = LOST_CULL_AUTO;
 		bool m_CullingEnabled = true; // Checks if culling is enabled, this is to reduce calls
+
+		CompiledMeshData* m_RawMeshInstance = nullptr; // Is set to the last raw mesh rendered, reset on queue render
+		RawMeshBuffer m_RawMeshBuffer; // Stores the settings of the last raw mesh rendered
 
 		std::vector<CompiledMeshData*> m_RawMeshes;
 
@@ -370,9 +406,7 @@ namespace lost
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
 		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
-		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
-
+		
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();
 

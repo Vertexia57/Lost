@@ -3,6 +3,11 @@ This contains a list of every external function given to the user by the Lost en
 
 Every function listed is in the `lost` namespace, and must be prefixed with `lost::` to be accessed.
 
+```cpp
+// [!] TODO: Improve Vector structs with extra functions to be on par with glm
+// [!] TODO: Random functions, like randint and stuff
+```
+
 ---
 # Contents
 - Engine
@@ -111,29 +116,54 @@ unsigned int getDepthTexture(unsigned int windowID = -1);
 More detailed descriptions for these functions can be found [[here]].
 
 ```cpp
-void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
-//    ^ Renders the texture to the screen using the default shader
-//      "bounds" is the area of the screen it renders to and "texBounds" is the area on the texture it will use in pixels.
-//      by default rendering the whole texture
-
-void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
-//    ^ Renders the texture to the screen using the default shader, bounds is the area of the screen it renders to 
-//      and texBounds is the area on the texture it will use in pixels, by default rendering the whole texture
-void renderTexture(Texture texture, float x, float y, float w = -1, float h = -1);
-//    ^ Renders the texture to the screen in the area given
 
 // Renders the mesh given to the screen
 void renderMesh(Mesh mesh, std::vector<Material> materials, glm::mat4x4& transform);
 void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
 
-// Renders a rect to the screen, this can use batching unlike renderQuad
-void renderRect(Material mat, Bounds2D bounds);
-// Renders a rect in 3D space, taking in a 3D position, size and rotation, can use batching unlike renderQuad3D
-void renderRect3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f });
-// Renders a quad in 3D space, taking in a 3D position, size and rotation, texBounds is the UV bounds from 0.0f - 1.0f
-void renderQuad3D(Material mat, Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }); 
-// Renders a quad to the screen not caring for perspective or view, texBounds is the UV bounds from 0.0f - 1.0f
-void renderQuad(Material mat, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f });
+// Renders a quad to the screen not caring for perspective or view
+void renderRect(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
+void renderRectPro(Bounds2D bounds, Vec2 origin, float angle, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
+void renderRect3D(Vec3 position, Vec2 size, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
+// [!] TODO: renderRectPro3D()
+
+// Renders a circle to the screen, detail is the amount of segments the polygon will have
+void renderCircle(Vec2 position, float radius, Material mat = nullptr, int detail = 30);
+void renderCircle3D(Vec3 position, float radius, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Material mat = nullptr, int detail = 30);
+
+// Renders a ellipse to the screen, detail is the amount of segments the polygon will have
+void renderEllipse(Vec2 position, Vec2 extents, Material mat = nullptr, int detail = 30);
+void renderEllipsePro(Vec2 position, Vec2 extents, Vec2 origin, float angle, Material mat = nullptr, int detail = 30);
+void renderEllipse3D(Vec3 position, Vec2 extents, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Material mat = nullptr, int detail = 30);
+
+// Renders the texture to the screen in the area given
+void renderTexture(Texture texture, float x, float y, float w = -1, float h = -1);
+void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
+//    ^ Renders the texture to the screen using the default shader, bounds is the area of the screen it renders to 
+//      and texBounds is the area on the texture it will use in pixels, by default rendering the whole texture
+
+// [-------------------------]
+//   Immediate Mesh Creation
+// [-------------------------]
+
+// Starts the creation of a mesh which will be rendered once endMesh() is ran
+void beginMesh(unsigned int renderMode = LOST_MESH_TRIANGLES, bool screenspace = false);
+
+// Adds a vertex to the mesh being created, must be ran after beginMesh()
+void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }); 
+void addVertex(Vertex vertex); 
+
+// Finishes the creation of a mesh and renders it, using the materials provided
+void endMesh(); // Uses a default white material, which color can be changed with lost::setFillColor()
+void endMesh(Material material);
+void endMesh(std::vector<Material>& materials);
+
+void setMeshTransform(glm::mat4x4& transform); // Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
+void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
+//    ^ Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
+//      "screenspace" when true will use a screenspace projection
+
+// [-------------------------]
 
 void setCullMode(unsigned int cullMode)
 //    ^ Sets the cull mode of the renderer, using LOST_CULL_FRONT, LOST_CULL_BACK, LOST_CULL_NONE, LOST_CULL_FRONT_AND_BACK and LOST_CULL_AUTO
@@ -165,14 +195,14 @@ void cameraUseProject(); // Sets the current camera's projection to projected, m
 void setCameraFOV(float degrees); // Sets the vertical FOV of the camera, in degrees
 
 // Transform functions
-void setCameraPosition(const glm::vec3& position); // Sets the position of the camera
-void setCameraRotation(const glm::vec3& rotation); // Sets the rotation of the camera, using euler rotation
-void setCameraScale(const glm::vec3& scale); // Sets the scale of the camera (A bigger camera shrinks the world)
-void cameraLookAt(const glm::vec3& location); // Sets the rotation of the camera to look at a certain point, taking the current position into account
-void cameraLookAtRelative(const glm::vec3& location); // Sets the rotation of the camera to look at a certain point relative to the current position of the camera
+void setCameraPosition(const Vec3& position); // Sets the position of the camera
+void setCameraRotation(const Vec3& rotation); // Sets the rotation of the camera, using euler rotation
+void setCameraScale(const Vec3& scale); // Sets the scale of the camera (A bigger camera shrinks the world)
+void cameraLookAt(const Vec3& location); // Sets the rotation of the camera to look at a certain point, taking the current position into account
+void cameraLookAtRelative(const Vec3& location); // Sets the rotation of the camera to look at a certain point relative to the current position of the camera
 
 // Sets every value of the camera at once, is much more efficient than running all 3 seperately
-void setCameraTransform(const glm::vec3& translate, const glm::vec3& rotation, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f });
+void setCameraTransform(const Vec3& translate, const Vec3& rotation, const Vec3& scale = { 1.0f, 1.0f, 1.0f });
 ```
 ---
 # Shader Functions
@@ -188,9 +218,9 @@ Shader loadShader(const char* vertexLoc, const char* fragmentLoc, const char* id
 Shader makeShader(const char* vertexCode, const char* fragmentCode, const char* id);  
 Shader getShader(const char* id);
 void   unloadShader(const char* id);
-void   unloadShader(Shader& shader);
+void   unloadShader(Shader shader);
 void   forceUnloadShader(const char* id);
-void   forceUnloadShader(Shader& shader);
+void   forceUnloadShader(Shader shader);
 
 void   setUniform(Shader shader, void* dataAt, const char* uniformName, unsigned int count = 1, unsigned int offset = 0);
 //      ^ Sets a uniform in the shader given. Automatically caches the uniform names and their locations.
@@ -260,31 +290,9 @@ Mesh loadMesh(const char* objLoc, const char* id = nullptr);
 Mesh makeMesh(MeshData& meshData, const char* id);
 Mesh getMesh(const char* id);
 void unloadMesh(const char* id);
-void unloadMesh(Mesh& obj);
+void unloadMesh(Mesh obj);
 void forceUnloadMesh(const char* id);
-void forceUnloadMesh(Mesh& obj);
-
-// [-------------------------]
-//   Immediate Mesh Creation
-// [-------------------------]
-
-// Starts the creation of a mesh which will be rendered once endMesh() is ran
-void beginMesh(unsigned int renderMode = LOST_MESH_TRIANGLES, bool screenspace = false);
-
-// Adds a vertex to the mesh being created, must be ran after beginMesh()
-void addVertex(Vec3 position, Color vertexColor = { 1.0f, 1.0f, 1.0f, 1.0f }, Vec2 textureCoord = { 0.0f, 0.0f }); 
-void addVertex(Vertex vertex); 
-
-// Finishes the creation of a mesh and renders it, using the materials provided
-void endMesh(); // Uses a default white material, which color can be changed with lost::setFillColor()
-void endMesh(Material material);
-void endMesh(std::vector<Material>& materials);
-
-void setMeshTransform(glm::mat4x4& transform); // Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
-void setMeshTransform(Vec3 position, Vec3 scale = { 1.0f, 1.0f, 1.0f }, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, bool screenspace = false);
-//    ^ Sets the *WORLD* transform of the mesh being rendered, must be ran after beginMesh()
-//      "screenspace" when true will use a screenspace projection
-
+void forceUnloadMesh(Mesh obj);
 ```
 
 ---
@@ -303,13 +311,13 @@ Font loadFont(const char* fontLoc, float fontHeight, const char* id = nullptr);
 //      renderText() will use when "scale" is 1. This is essentially the "quality" of the font
 Font getFont(const char* id);
 void unloadFont(const char* id);
-void unloadFont(Font& font);
+void unloadFont(Font font);
 void forceUnloadFont(const char* id);
-void forceUnloadFont(Font& font);
+void forceUnloadFont(Font font);
 
 // Text Rendering Functions
 Vec2  textBounds(const char* text, Font font, float scale); // Returns the width and height of what the text given would take up when rendered
-float textWidth (const char* text, Font font, float scale); // Returns the width of what the text given would take up when rendered
+float textWidth (const char* text, Font font, float scale); // Returns the width  of what the text given would take up when rendered
 float textHeight(const char* text, Font font, float scale); // Returns the height of what the text given would take up when rendered
 
 // Uses screenspace, hAlign and vAlign change the alignment of the text, horizontally and vertically

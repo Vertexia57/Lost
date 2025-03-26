@@ -18,11 +18,13 @@ enum MeshRenderMethod
 
 	// Renders every pair of verticies as a seperate line but joins the first and last verticies given
 	// [a, b], [c, d] then (d, a) is added by the renderer
+	// Does not work with raw mesh batching
 	// Equivalent of GL_LINE_LOOP
 	LOST_MESH_LINE_LOOP,
 
 	// Renders a line of verticies connecting each one given with no seperation, excluding the first and last vertex
 	// [a, b, c, d] = o--o--o--o
+	// Does not work with raw mesh batching
 	// Equivalent of GL_LINE_STRIP
 	LOST_MESH_LINE_STRIP,
 
@@ -33,12 +35,14 @@ enum MeshRenderMethod
 
 	// Renders a strip of triangles, the first three given form a triangle, then any further vertex added creates a new triangle using the last two as it's base
 	// Eg. Given the vertex list A, B, C, D, E, these triangles would be formed: [A, B, C], [B, C, D], [C, D, E]
+	// Does not work with raw mesh batching
 	// Equivalent of GL_TRIANGLE_STRIP
 	LOST_MESH_TRIANGLE_STRIP,
 
 	// Renders a strip of triangles, the first three given form a triangle, then any further vertex added creates a new triangle using the first vertex given and the last vertex given as it's base
 	// Eg. Given the vertex list A, B, C, D, E, these triangles would be formed: [A, B, C], [A, C, D], [A, D, E]
 	// They all share A, the first vertex given, but they use the last vertex given as the second vertex
+	// Does not work with raw mesh batching
 	// Equivalent of GL_TRIANGLE_FAN
 	LOST_MESH_TRIANGLE_FAN
 };
