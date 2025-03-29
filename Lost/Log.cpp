@@ -5,7 +5,6 @@
 
 namespace lost
 {
-
 	bool _logHasContext = false;
 	std::string _logContext = "";
 
@@ -13,11 +12,11 @@ namespace lost
 	{
 		"",
 		" Success ",
-		" Info ",
+		"  Info.  ",
 		" Warning ",
 		" Warning ",
-		" Error ",
-		" FATAL "
+		"  Error  ",
+		"  FATAL  "
 	};
 
 #ifdef LOST_DEBUG_MODE
@@ -44,6 +43,13 @@ namespace lost
 	};
 #endif 
 
+	std::vector<_Log> _logList;
+
+	const std::vector<_Log>& _getLogList()
+	{
+		return _logList;
+	}
+
 	void setLogContext(std::string context)
 	{
 		_logHasContext = true;
@@ -58,6 +64,15 @@ namespace lost
 	void log(std::string text, int level)
 	{
 		std::string errorMsg;
+
+#ifdef LOST_DEBUG_MODE
+		if (level > LOST_LOG_NONE)
+		{
+			_logList.push_back(_Log{ text, (unsigned int)level });
+			if (_logList.size() > LOST_LOG_QUEUE_SIZE)
+				_logList.erase(_logList.begin());
+		}
+#endif
 
 		if (level >= LOST_LOG_WARNING) // Warning or greater
 		{

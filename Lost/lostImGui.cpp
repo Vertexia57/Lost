@@ -1670,6 +1670,59 @@ namespace lost
 		}
 	}
 
+	void _imGuiDisplayLogList()
+	{
+
+		if (LOST_LOG_QUEUE_SIZE > 0) // Check if there is a log queue
+		{
+			const std::vector<_Log>& logList = lost::_getLogList();
+
+			for (const _Log& log : logList)
+			{
+
+				const char* prefix = "";
+
+				ImColor textColor;
+				switch (log.level)
+				{
+				case LOST_LOG_NONE:
+					continue; // No logs use this, skip it just in case
+				case LOST_LOG_SUCCESS:
+					textColor = { 50, 255, 75 };
+					prefix = "[ Success ] ";
+					break;
+				case LOST_LOG_INFO:
+					textColor = { 100, 150, 255 };
+					prefix = "[  Info.  ] ";
+					break;
+				case LOST_LOG_WARNING:
+				case LOST_LOG_WARNING_NO_NOTE:
+					textColor = { 255, 255, 50 };
+					prefix = "[ Warning ] ";
+					break;
+				case LOST_LOG_ERROR:
+					textColor = { 255, 100, 50 };
+					prefix = "[  Error  ] ";
+					break;
+				default: // We can skip FATAL as that crashes the program
+					break;
+				}
+
+				ImGui::TextColored(textColor, (prefix + log.logText).c_str());
+			}
+		}
+		else
+		{
+			const char* errorName = "The log queue has been disabled";
+
+			ImVec2 center = { ImGui::GetContentRegionAvail().x / 2.0f + ImGui::GetCursorPos().x, ImGui::GetContentRegionAvail().y / 2.0f + ImGui::GetCursorPos().y };
+			ImVec2 textSize = ImGui::CalcTextSize(errorName);
+
+			ImGui::SetCursorPos({ center.x - textSize.x / 2.0f, center.y - textSize.y / 2.0f });
+			ImGui::Text(errorName);
+		}
+	}
+
 	void imGuiDisplayProgramInfo()
 	{
 		ImGuiWindowFlags flags = 0;
@@ -1686,21 +1739,50 @@ namespace lost
 
 			ImVec4 frameRateColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 			if (frameRate < 15)
-				frameRateColor = { 0.5f,  0.0f,  0.0f, 1.0f };
+				frameRateColor = { 0.5f, 0.0f,  0.0f, 1.0f };
 			else if (frameRate < 30)
-				frameRateColor = { 1.0f,  0.0f,  0.0f, 1.0f };
+				frameRateColor = { 1.0f, 0.0f,  0.0f, 1.0f };
 			else if (frameRate < 45)
-				frameRateColor = { 1.0f,  0.5f,  0.0f, 1.0f };
+				frameRateColor = { 1.0f, 0.5f,  0.0f, 1.0f };
 			else if (frameRate < 50)
-				frameRateColor = { 0.5f,  0.75f, 0.0f, 1.0f };
+				frameRateColor = { 0.5f, 0.75f, 0.0f, 1.0f };
 			else if (frameRate < 60)
-				frameRateColor = { 0.0f,  1.0f,  0.0f, 1.0f };
+				frameRateColor = { 0.0f, 1.0f,  0.0f, 1.0f };
 			else
-				frameRateColor = { 0.5f,  1.0f,  0.5f, 1.0f };
+				frameRateColor = { 0.5f, 1.0f,  0.5f, 1.0f };
 
 			ImGui::Text("FPS:");
 			ImGui::SameLine();
 			ImGui::TextColored(frameRateColor, "%i", frameRate);
+
+			bool isOpen = ImGui::BeginCollapsingHeaderEx("Logs##LOST_logMenu", "Logs");
+			if (isOpen)
+			{
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				ImGuiStyle& style = ImGui::GetStyle();
+
+				int borderRound = 8;
+				int roundingCorners = ImDrawFlags_RoundCornersLeft;
+				int logHeight = 500;
+
+				ImColor fillColor = { 4, 4, 7, 255 };
+				ImColor borderColor = { 0x40, 0x40, 0x49, 255 };
+
+				ImVec2 cursorPos = ImGui::GetCursorPos();
+				ImVec2 min = ImGui::GetCursorScreenPos();
+				ImVec2 max = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + logHeight };
+
+				drawList->AddRectFilled(min, max, fillColor,   borderRound, roundingCorners);
+				drawList->AddRect(      min, max, borderColor, borderRound, roundingCorners);
+
+				ImGui::SetCursorPos({ cursorPos.x + 1, cursorPos.y + 1 });
+				ImGui::BeginChild("##LOST_logMenu", ImVec2{ ImGui::GetContentRegionAvail().x - 1.0f, (float)logHeight - 2.0f}, ImGuiChildFlags_None | ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoBackground);
+				_imGuiDisplayLogList();
+				ImGui::EndChild();
+
+				ImGui::SetCursorPos({ cursorPos.x, cursorPos.y + logHeight + style.ItemSpacing.y });
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
 			ImGui::EndTabItem();
 		}
 
