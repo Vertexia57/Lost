@@ -13,99 +13,6 @@ int main()
 
 	lost::setupImGui();
 
-	lost::Shader shader = lost::loadShader(nullptr, "data/fragment.frag", "phongShader");
-
-	lost::Vec3 lightColor = { 1.0f, 0.0f, 0.0f };
-	lost::setUniform(shader, (void*)lightColor.v, "lightColor", 1, 0);
-	lightColor = { 0.0f, 1.0f, 0.0f };
-	lost::setUniform(shader, (void*)lightColor.v, "lightColor", 1, 1);
-	lightColor = { 0.0f, 0.0f, 1.0f };
-	lost::setUniform(shader, (void*)lightColor.v, "lightColor", 1, 2);
-	float lightIntensity = 1.0f;
-	lost::setUniform(shader, (void*)&lightIntensity, "lightIntensity", 1, 0);
-	lost::setUniform(shader, (void*)&lightIntensity, "lightIntensity", 1, 1);
-	lost::setUniform(shader, (void*)&lightIntensity, "lightIntensity", 1, 2);
-
-	lost::Mesh mesh = lost::loadMesh("data/cubeUV.obj");
-	lost::Material weird = lost::makeMaterial(
-		{
-			lost::loadTexture("data/testNormal.png"),
-			lost::getDefaultWhiteTexture(),
-			lost::loadTexture("data/testNormal.png"),
-		}, "weird", shader
-	);
-	lost::Material cube = lost::makeMaterial(
-		{
-			lost::getDefaultWhiteTexture(),
-			lost::getDefaultWhiteTexture(),
-			lost::getDefaultNormalTexture()
-		}, "cube", shader
-	);
-
-	// Nardo Material List
-	/*
-	lost::Mesh mesh = lost::loadMesh("data/Nardo.obj");
-	std::vector<lost::Material> nardoMaterialList =
-	{
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/body.png"),
-				lost::_getDefaultBlackTexture(),
-				lost::loadTexture("data/Textures/bodyNorm.png"),
-			}, "body", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/misc.png"),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "misc", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/eyes.png"),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "eyes", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/fluff.png"),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "fluff", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::_getDefaultWhiteTexture(),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "specular", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/mawBase.png"),
-				lost::loadTexture("data/Textures/mawRoughness.png"),
-				lost::loadTexture("data/Textures/mawNormal.png"),
-			}, "maw", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::_getDefaultWhiteTexture(),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "saliva", shader
-		),
-		lost::makeMaterial(
-			{
-				lost::loadTexture("data/Textures/hair.png"),
-				lost::_getDefaultBlackTexture(),
-				lost::_getDefaultNormalTexture()
-			}, "hair", shader
-		),
-	};
-	*/
-
 	lost::Vec3 cameraPosition = { 0.0f, 0.0f, 0.0f };
 	float camYaw = 0.0f;
 	float camPit = 0.0f;
@@ -172,16 +79,7 @@ int main()
 		lost::setCameraPosition(cameraPosition);
 		lost::cameraLookAtRelative(forwardVector);
 
-		lost::setUniform(shader, &cameraPosition.x, "cameraPosition");
-
-		lost::Vec3 lightPos = { 2 * sin(uptime), 2 * cos(uptime), 0.0f };
-		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 0);
-		lightPos = { 0.0f, 2 * sin(uptime), 2 * cos(uptime) };
-		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 1);
-		lightPos = { 2 * cos(uptime), 2 * sin(uptime), 2 * sin(uptime) };
-		lost::setUniform(shader, (void*)lightPos.v, "lightData", 1, 2);
-
-		lost::renderMesh(mesh, { weird }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+		//lost::renderMesh(mesh, { weird }, { 0.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 
 		//lost::renderEllipsePro({ 100.0f, 150.0f }, { 100.0f, 50.0f }, uptime * 10.0f, weird);
 
@@ -201,6 +99,10 @@ int main()
 		lost::renderRectPro({ 500.0f, 500.0f, 200.0f, 200.0f }, { 100.0f, 200.0f }, uptime);
 		lost::setFillColor(255, 255, 255, 255);
 		lost::renderRectPro({ 500.0f, 500.0f, 200.0f, 200.0f }, { 100.0f, 100.0f }, uptime);
+
+		//lost::renderLine(100, 100, 800, 200);
+
+		//lost::renderLineStrip({ { 50, 100 }, { 100, 100 }, { 100, 50 }, {50, 50} });
 
 		// ImGUI
 		lost::imGuiDisplayProgramInfo();

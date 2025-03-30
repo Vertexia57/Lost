@@ -629,36 +629,47 @@ namespace lost
 
 	void beginFrame(Window context)
 	{
-		if (context != nullptr) // A specific window to render to was given, set the context to that one
+		bool contextSwitched = false;
+		if (_currentContextID != -1)
 		{
-			for (int i = 0; i < _windowContexts.size(); i++)
+			if (context != _windowContexts[_currentContextID])
+				contextSwitched = true;
+		}
+		else
+			contextSwitched = true;
+
+		if (contextSwitched)
+		{
+			if (context != nullptr) // A specific window to render to was given, set the context to that one
 			{
-				if (_windowContexts[i] == context)
+				for (int i = 0; i < _windowContexts.size(); i++)
 				{
-					_currentContextID = i;
-					break;
-				}
+					if (_windowContexts[i] == context)
+					{
+						_currentContextID = i;
+						break;
+					}
 
 #ifdef LOST_DEBUG_MODE
-				// Test if window exists
-				debugLogIf(i == _windowContexts.size() - 1, "Tried to start frame on window that has been destroyed", LOST_LOG_FATAL);
+					// Test if window exists
+					debugLogIf(i == _windowContexts.size() - 1, "Tried to start frame on window that has been destroyed", LOST_LOG_FATAL);
 #endif
+				}
+				glfwMakeContextCurrent(context->glfwWindow);
 			}
-			glfwMakeContextCurrent(context->glfwWindow);
-		}
-		else // No context was given, use the first window created
-		{
-			context = _windowContexts[0];
-			glfwMakeContextCurrent(context->glfwWindow);
-			_currentContextID = 0;
+			else // No context was given, use the first window created
+			{
+				context = _windowContexts[0];
+				glfwMakeContextCurrent(context->glfwWindow);
+				_currentContextID = 0;
+			}
+
+			glViewport(0, 0, context->width, context->height);
 		}
 
-		glViewport(0, 0, context->width, context->height);
 		if (_currentContextID == 0)
 			lost::_updateGL();
 		lost::_startRender();
-
-		_defaultShader->bind();
 	}
 
 	void endFrame()

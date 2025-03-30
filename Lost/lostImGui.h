@@ -18,7 +18,6 @@ namespace lost
 
 namespace ImGui
 {
-
 	// Extra ImGui functions
 
 	static bool renderFrameContent(const char* title, bool* value, void(*insert)() = nullptr);
@@ -27,4 +26,22 @@ namespace ImGui
 	bool BeginCollapsingHeaderEx(const char* id, const char* title, bool* isOpen = nullptr, float sizeX = 0.0f, float paddingX = 0.0f, float paddingY = 0.0f);
 	bool BeginCollapsingHeaderWithInsert(const char* id, const char* title, void(*titleInsert)(), bool* isOpen = nullptr, float sizeX = 0.0f, float paddingX = 0.0f, float paddingY = 0.0f);
 	void EndCollapsingHeaderEx(bool isOpen);
+
+	//// Graph
+
+	//enum GraphType
+	//{
+	//	ImGuiGraphType_BarX,
+	//	ImGuiGraphType_BarY
+	//};
+
+	//struct Graph
+	//{
+	//	unsigned int graphType;
+	//	float minX;
+	//	float maxX;
+	//	float minY;
+	//	float maxY;
+	//};
+	//
 }

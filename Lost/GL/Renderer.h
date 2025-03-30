@@ -5,8 +5,6 @@
 #include "RenderPass.h"
 #include "Structs.h" 
 
-// [!] TODO: Make addRawMeshToQueue() use batching, by making a queue of verticies that is pushed once there is a material change
-
 enum RenderMode2D
 {
 	// Renders every mesh to the frame buffer instantly, no queue
@@ -128,6 +126,13 @@ namespace lost
 	void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, -1.0f, -1.0f });
 	// Renders the texture to the screen in the area given
 	void renderTexture(Texture texture, float x, float y, float w = -1, float h = -1);
+
+	// Renders a 2D line
+	void renderLine(float x1, float y1, float x2, float y2);
+	// Renders a 2D line
+	inline void renderLine(Vec2 a, Vec2 b);
+	// Renders a string of lines
+	void renderLineStrip(const std::vector<Vec2>& points);
 
 	// Renders the queue of meshes stored in the instance queue
 	void renderInstanceQueue();

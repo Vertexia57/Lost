@@ -179,8 +179,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -194,10 +193,10 @@
   },
   "active": "142f17229d4eeaa0",
   "lastOpenFiles": [
-    "Data Handling within Lost.md",
-    "Lost Cheat Sheet.md",
-    "Shaders.md",
     "Rendering.md",
+    "Lost Cheat Sheet.md",
+    "Data Handling within Lost.md",
+    "Shaders.md",
     "Images/Default shader breakdown.png",
     "Images/ShaderLoadInfo.png",
     "Images/InitDebugInfo.png",

@@ -21,10 +21,14 @@
 #define NOMINMAX
 #endif
 
+#ifdef LOST_DEBUG_MODE
+#define LOST_FRAME_RATE_HISTORY_ENABLED true
+#define LOST_FRAME_RATE_HISTORY_COUNT 500 // Frame count to store
+#endif
+
 namespace ImGui
 {
 	std::map<std::string, bool*> _IDToggleMap;
-
 
 	// File: 'ProggyClean.ttf' (41208 bytes)
 	// Exported using binary_to_compressed_c.exe -u8 "ProggyClean.ttf" proggy_clean_ttf
@@ -767,6 +771,143 @@ namespace lost
 		};
 	};
 
+	static class FrameHistory
+	{
+	public:
+		FrameHistory()
+		{
+			// 0 out frame time history
+			for (int i = 0; i < frameCount; i++)
+				frameTimeHistory[i] = 0.0f;
+		}
+
+		void addFrameTime(float frameTime)
+		{
+			cursor++;
+			if (cursor >= frameCount) // Loop back around
+				cursor = 0;
+
+			if (frameTime > maxTime) // Update the max time if this is the biggest it's seen
+			{
+				maxTime = frameTime;
+				maxPoint = cursor;
+			}
+			else if (maxTime == frameTimeHistory[cursor]) // Update the max time if this overrode the biggest value
+			{
+				float maxVal = 0.0f;
+				for (int i = 0; i < frameCount; i++)
+				{
+					if (i == cursor)
+						continue;
+
+					if (frameTimeHistory[i] > maxVal)
+					{
+						maxVal = frameTimeHistory[i];
+						maxPoint = i;
+					}
+				}
+				maxTime = maxVal;
+			}
+
+			if (maxTime < 1000.0f / 60.0f)
+				maxTime = 1000.0f / 60.0f;
+
+			frameTimeHistory[cursor] = frameTime;
+		}
+
+		void _imGuiDisplayFrameTimeInfo()
+		{
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			ImGuiStyle& style = ImGui::GetStyle();
+
+			int borderRound = 8;
+			int roundingCorners = ImDrawFlags_RoundCornersAll;
+			int graphHeight = 500;
+
+			ImColor fillColor = { 4, 4, 7, 255 };
+			ImColor borderColor = { 0x40, 0x40, 0x49, 255 };
+
+			ImVec2 cursorPos = ImGui::GetCursorPos();
+			ImVec2 min = ImGui::GetCursorScreenPos();
+			ImVec2 max = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + graphHeight };
+
+			drawList->AddRectFilled(min, max, fillColor, borderRound, roundingCorners);
+			drawList->AddRect(min, max, borderColor, borderRound, roundingCorners);
+
+			ImGui::SetCursorPos({ cursorPos.x + 1, cursorPos.y + 1 });
+			ImGui::BeginChild("##LOST_frameTimeMenu", ImVec2{ ImGui::GetContentRegionAvail().x - 1.0f, (float)graphHeight - 2.0f }, ImGuiChildFlags_None | ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoBackground);
+
+			ImVec4 extraPadding = { 70.0f, 20.0f, 70.0f, 20.0f };
+
+			ImVec2 innerMin = { ImGui::GetCursorScreenPos().x + extraPadding.x, ImGui::GetCursorScreenPos().y + extraPadding.y };
+			ImVec2 innerMax = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - extraPadding.z, ImGui::GetContentRegionAvail().y + ImGui::GetCursorScreenPos().y - extraPadding.w };
+
+			ImColor barColor = { 100, 125, 240, 255 };
+			float barWidth = (innerMax.x - innerMin.x) / frameCount;
+			float barHeight = (innerMax.y - innerMin.y);
+			float scale = 1.0f / maxTime;
+
+			ImColor graphLineCol = { 255, 255, 255, 255 };
+			ImColor graphSecondaryLineCol = { 100, 100, 100, 255 };
+			// Axis'
+			drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMax.x + 1, innerMax.y }, graphLineCol);
+			drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMin.x - 1, innerMin.y }, graphLineCol);
+			drawList->AddLine({ innerMax.x,     innerMax.y }, { innerMax.x,     innerMin.y }, graphLineCol);
+			// Extra lines
+			float frameGoalLineSpacing = 180.0f;
+			float timeGoalLineSpacing = 1000.0f / frameGoalLineSpacing;
+
+			for (int i = 1; i <= (int)(maxTime / timeGoalLineSpacing); i++)
+			{
+				float lineY = innerMax.y - barHeight * timeGoalLineSpacing * i * scale;
+				drawList->AddLine({ innerMin.x, lineY }, { innerMax.x, lineY }, graphSecondaryLineCol);
+
+				int fpsVal = frameGoalLineSpacing / i;
+				std::string frameLabel = std::to_string(fpsVal) + "fps";
+				ImVec2 textSize = ImGui::CalcTextSize(frameLabel.c_str());
+				ImVec2 framePos = { innerMin.x - textSize.x - 5.0f, lineY - textSize.y / 2.0f };
+				drawList->AddText(framePos, graphLineCol, frameLabel.c_str());
+
+				int msVal = (float)(i / frameGoalLineSpacing) * 1000.0f;
+				std::string msLabel = std::to_string(msVal) + "ms";
+				textSize = ImGui::CalcTextSize(msLabel.c_str());
+				ImVec2 msPos = { innerMax.x + 5.0f, lineY - textSize.y / 2.0f };
+				drawList->AddText(msPos, graphLineCol, msLabel.c_str());
+			}
+
+			for (int i = 0; i < frameCount; i++)
+			{
+				int offset = cursor - frameCount + (i + 1);
+				if (offset < 0)
+					offset += frameCount;
+
+				if (frameTimeHistory[offset] == maxTime)
+					barColor = { 150, 10, 20, 255 };
+				else
+					barColor = { 100, 125, 240, 255 };
+
+				ImVec2 barMin = { (innerMin.x + barWidth * i),      (innerMax.y - barHeight * frameTimeHistory[offset] * scale) };
+				ImVec2 barMax = { (innerMin.x + barWidth * (i + 1)), innerMax.y };
+				drawList->AddRectFilled(barMin, barMax, barColor);
+			}
+
+			ImGui::EndChild();
+
+			ImGui::SetCursorPos({ cursorPos.x, cursorPos.y + graphHeight + style.ItemSpacing.y });
+		}
+
+	private:
+		unsigned int cursor = 0; // The point which is considered address "199"
+
+		unsigned int frameCount = LOST_FRAME_RATE_HISTORY_COUNT;
+		bool enabled = LOST_FRAME_RATE_HISTORY_ENABLED;
+
+		float frameTimeHistory[LOST_FRAME_RATE_HISTORY_COUNT];
+
+		unsigned int maxPoint = 0;
+		float maxTime = 0.0f;
+	} frameHistory = {};
+
 	std::map<std::string, UniformSelection> uniformSelectors;
 
 	// Is ran inside of a child window
@@ -897,9 +1038,6 @@ namespace lost
 				// Display material uniforms
 				ImGui::SeparatorText("Material Uniforms");
 #pragma region MaterialUniforms
-
-				// [!] TODO: Make this display the editable values at face value, and a
-				// [!]       tooltip which shows the info, or an openable
 
 				const std::vector<lost::MaterialUniform>& materialUniformList = it->second.data->getMaterialUniforms();
 				if (!materialUniformList.empty()) // Check if the material has any set uniforms
@@ -1755,7 +1893,15 @@ namespace lost
 			ImGui::SameLine();
 			ImGui::TextColored(frameRateColor, "%i", frameRate);
 
-			bool isOpen = ImGui::BeginCollapsingHeaderEx("Logs##LOST_logMenu", "Logs");
+			bool isOpen = ImGui::BeginCollapsingHeaderEx("##LOST_FrameRateHistoryWindow", "View Frame-time History (Only active when open)");
+			if (isOpen)
+			{
+				frameHistory.addFrameTime(lost::getDeltaTime());
+				frameHistory._imGuiDisplayFrameTimeInfo();
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+
+			isOpen = ImGui::BeginCollapsingHeaderEx("Logs##LOST_logMenu", "View Logs");
 			if (isOpen)
 			{
 				ImDrawList* drawList = ImGui::GetWindowDrawList();

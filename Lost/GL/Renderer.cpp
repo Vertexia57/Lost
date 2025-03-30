@@ -569,8 +569,8 @@ namespace lost
 			// Vertex Buffer Data
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW);
-
-			glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW); // [!] TODO: WTF?
+			if (getWindows().size() > 1) // I have no idea why this is necessary, something to do with context switching probably
+				glBufferData(GL_ARRAY_BUFFER, ((CompiledMeshData*)currentMesh)->vertexData.size() * sizeof(float), ((CompiledMeshData*)currentMesh)->vertexData.data(), GL_STATIC_DRAW);
 
 			// Create transform list, reserving the maximum size that could occur
 			std::vector<glm::mat4x4> transforms;
@@ -1129,6 +1129,84 @@ namespace lost
 		if (h == -1.0f) h = texture->getHeight();
 
 		renderRect({ x, y, w, h }, { 0.0f, 0.0f, 1.0f, 1.0f }, texture->getMaterial());
+	}
+
+	void renderLine(float x1, float y1, float x2, float y2)
+	{
+		Window currentWindow = getCurrentWindow();
+
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
+		CompiledMeshData mesh = {};
+		mesh.vertexData = {
+			x1, y1, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			x2, y2, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		};
+		mesh.indexData = { 0, 1 };
+		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_LINES;
+
+		// Rotate the transform around the axis that goes into the screen (Z)
+
+		glm::mat4x4 transform = glm::mat4x4(
+			 xScale, 0.0f,   0.0f, 0.0f,
+			 0.0f,  -yScale, 0.0f, 0.0f,
+			 0.0f,   0.0f,   1.0f, 0.0f,
+			-1.0f,   1.0f,   0.0f, 1.0f
+		);
+
+		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
+
+		_renderer->addRawToQueue(mesh, materialList, transform, transform);
+	}
+
+	void renderLine(Vec2 a, Vec2 b)
+	{
+		renderLine(a.x, a.y, b.x, b.y);
+	}
+
+	void renderLineStrip(const std::vector<Vec2>& points)
+	{
+		Window currentWindow = getCurrentWindow();
+
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
+		CompiledMeshData mesh = {};
+		mesh.vertexData = {};
+		mesh.indexData = {};
+		mesh.vertexData.reserve(points.size() * 16);
+		mesh.indexData.reserve(points.size());
+		for (const Vec2& p : points)
+		{
+			mesh.vertexData.insert(mesh.vertexData.end(), { p.x, p.y, 0.0f, 0.0f, 0.0f, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f });
+			mesh.indexData.push_back(mesh.indexData.size());
+		}
+
+		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_LINE_STRIP;
+
+		// Rotate the transform around the axis that goes into the screen (Z)
+
+		glm::mat4x4 transform = glm::mat4x4(
+			xScale, 0.0f, 0.0f, 0.0f,
+			0.0f, -yScale, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			-1.0f, 1.0f, 0.0f, 1.0f
+		);
+
+		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
+
+		_renderer->addRawToQueue(mesh, materialList, transform, transform);
 	}
 
 	void renderInstanceQueue()

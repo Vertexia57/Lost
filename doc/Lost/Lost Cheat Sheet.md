@@ -142,6 +142,12 @@ void renderTexture(Texture texture, Bounds2D bounds, Bounds2D texBounds = { 0.0f
 //    ^ Renders the texture to the screen using the default shader, bounds is the area of the screen it renders to 
 //      and texBounds is the area on the texture it will use in pixels, by default rendering the whole texture
 
+// Renders a 2D line
+void renderLine(float x1, float y1, float x2, float y2);
+void renderLine(Vec2 a, Vec2 b);
+void renderLineStrip(const std::vector<Vec2>& points);
+//    ^ Renders a string of lines
+
 // [-------------------------]
 //   Immediate Mesh Creation
 // [-------------------------]
