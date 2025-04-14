@@ -907,6 +907,8 @@ namespace lost
 
 		Window currentWindow = getCurrentWindow();
 
+		origin.y *= -1; // Not entirely sure why this is necessary, probably something with the different coordinate system
+
 		float xScale = 2.0f / getWidth(currentWindow);
 		float yScale = 2.0f / getHeight(currentWindow);
 		Vec2 scale = { xScale, yScale };
@@ -914,10 +916,8 @@ namespace lost
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
-		// [!] TODO: Remove the transform, just use the basic transform so that instancing works on it
-
 		const lost::Vec2 reusedCornerA = lost::Vec2{ -(origin.x * cosf(angle) + origin.y * sinf(angle)) + bounds.x, origin.x * -sinf(angle) + origin.y * cosf(angle) + bounds.y };
-		const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w) * cosf(angle) + (origin.y - bounds.h) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y - bounds.h) * cosf(angle) + bounds.y };
+		const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y };
 
 		CompiledMeshData mesh = {};
 		mesh.vertexData = {
@@ -925,7 +925,7 @@ namespace lost
 			-((origin.x - bounds.w) * cosf(angle) + (origin.y) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y) * cosf(angle) + bounds.y, 0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-((origin.x) * cosf(angle) + (origin.y - bounds.h) * sinf(angle)) + bounds.x, (origin.x) * -sinf(angle) + (origin.y - bounds.h) * cosf(angle) + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-((origin.x) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 			reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
 		};
 		mesh.indexData = { 2, 1, 0, 5, 4, 3 };

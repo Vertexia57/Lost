@@ -12,7 +12,11 @@ namespace lost
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _closeImGui();
 
-	// Displays a large amount of the programs info
+	// Displays a large amount of the programs info.
+	// Everything within this function is only ran by this function.
+	// None of the debug features within this function are ran by the engine.
+	// All of the overhead of this function comes from running this.
+	// The only cost that this incures is a slight memory cost, which can be removed my disabling imgui.
 	void imGuiDisplayProgramInfo();
 }
 

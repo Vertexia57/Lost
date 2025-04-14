@@ -24,6 +24,9 @@
 #ifdef LOST_DEBUG_MODE
 #define LOST_FRAME_RATE_HISTORY_ENABLED true
 #define LOST_FRAME_RATE_HISTORY_COUNT 500 // Frame count to store
+#else
+#define LOST_FRAME_RATE_HISTORY_ENABLED false
+#define LOST_FRAME_RATE_HISTORY_COUNT 1 // Frame count to store
 #endif
 
 namespace ImGui
@@ -783,6 +786,10 @@ namespace lost
 
 		void addFrameTime(float frameTime)
 		{
+
+			if (!acceptNewInputs) // Escape if not accepting any new inputs
+				return;
+
 			cursor++;
 			if (cursor >= frameCount) // Loop back around
 				cursor = 0;
@@ -809,8 +816,11 @@ namespace lost
 				maxTime = maxVal;
 			}
 
-			if (maxTime < 1000.0f / 60.0f)
-				maxTime = 1000.0f / 60.0f;
+			if (maxTime < 1000.0f / clipFPS)
+				maxTime = 1000.0f / clipFPS;
+
+			averageFrameTime += frameTime / frameCount;
+			averageFrameTime -= frameTimeHistory[cursor] / frameCount;
 
 			frameTimeHistory[cursor] = frameTime;
 		}
@@ -836,59 +846,89 @@ namespace lost
 
 			ImGui::SetCursorPos({ cursorPos.x + 1, cursorPos.y + 1 });
 			ImGui::BeginChild("##LOST_frameTimeMenu", ImVec2{ ImGui::GetContentRegionAvail().x - 1.0f, (float)graphHeight - 2.0f }, ImGuiChildFlags_None | ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoBackground);
+			ImVec2 oldCursorPos = ImGui::GetCursorPos();
 
-			ImVec4 extraPadding = { 70.0f, 20.0f, 70.0f, 20.0f };
-
-			ImVec2 innerMin = { ImGui::GetCursorScreenPos().x + extraPadding.x, ImGui::GetCursorScreenPos().y + extraPadding.y };
-			ImVec2 innerMax = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - extraPadding.z, ImGui::GetContentRegionAvail().y + ImGui::GetCursorScreenPos().y - extraPadding.w };
-
-			ImColor barColor = { 100, 125, 240, 255 };
-			float barWidth = (innerMax.x - innerMin.x) / frameCount;
-			float barHeight = (innerMax.y - innerMin.y);
-			float scale = 1.0f / maxTime;
-
-			ImColor graphLineCol = { 255, 255, 255, 255 };
-			ImColor graphSecondaryLineCol = { 100, 100, 100, 255 };
-			// Axis'
-			drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMax.x + 1, innerMax.y }, graphLineCol);
-			drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMin.x - 1, innerMin.y }, graphLineCol);
-			drawList->AddLine({ innerMax.x,     innerMax.y }, { innerMax.x,     innerMin.y }, graphLineCol);
-			// Extra lines
-			float frameGoalLineSpacing = 180.0f;
-			float timeGoalLineSpacing = 1000.0f / frameGoalLineSpacing;
-
-			for (int i = 1; i <= (int)(maxTime / timeGoalLineSpacing); i++)
+			if (enabled)
 			{
-				float lineY = innerMax.y - barHeight * timeGoalLineSpacing * i * scale;
-				drawList->AddLine({ innerMin.x, lineY }, { innerMax.x, lineY }, graphSecondaryLineCol);
+				ImVec4 extraPadding = { 70.0f, 20.0f, 70.0f, 20.0f };
 
-				int fpsVal = frameGoalLineSpacing / i;
-				std::string frameLabel = std::to_string(fpsVal) + "fps";
-				ImVec2 textSize = ImGui::CalcTextSize(frameLabel.c_str());
-				ImVec2 framePos = { innerMin.x - textSize.x - 5.0f, lineY - textSize.y / 2.0f };
-				drawList->AddText(framePos, graphLineCol, frameLabel.c_str());
+				ImGui::SetCursorPos({ 20, 20 });
+				
+				ImVec2 topRight = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - (20 - style.FramePadding.x), ImGui::GetCursorScreenPos().y };
 
-				int msVal = (float)(i / frameGoalLineSpacing) * 1000.0f;
-				std::string msLabel = std::to_string(msVal) + "ms";
-				textSize = ImGui::CalcTextSize(msLabel.c_str());
-				ImVec2 msPos = { innerMax.x + 5.0f, lineY - textSize.y / 2.0f };
-				drawList->AddText(msPos, graphLineCol, msLabel.c_str());
+				bool tempInverse = !acceptNewInputs;
+				ImGui::Checkbox("Pause##Lost_frameTimeButtonTest", &tempInverse);
+				if (tempInverse != !acceptNewInputs)
+					acceptNewInputs = !tempInverse;
+
+				std::string averageText = std::string("Max: ") + ((maxTime <= (1000.0f/ clipFPS)) ? "<" : "") + std::to_string(maxTime) + "ms / Average: " + std::to_string(averageFrameTime) + "ms / " + std::to_string((int)round(1000.0f / averageFrameTime)) + "fps";
+				ImVec2 textSize = ImGui::CalcTextSize(averageText.c_str());
+				drawList->AddText({ topRight.x - textSize.x, topRight.y }, ImColor{ 135, 191, 255, 255 }, averageText.c_str());
+
+				ImVec2 innerMin = { ImGui::GetCursorScreenPos().x + extraPadding.x, ImGui::GetCursorScreenPos().y + extraPadding.y };
+
+				ImVec2 innerMax = { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - extraPadding.z, ImGui::GetContentRegionAvail().y + ImGui::GetCursorScreenPos().y - extraPadding.w };
+
+				ImColor barColor = { 100, 125, 240, 255 };
+				float barWidth = (innerMax.x - innerMin.x) / frameCount;
+				float barHeight = (innerMax.y - innerMin.y);
+				float scale = 1.0f / maxTime;
+
+				ImColor graphLineCol = { 255, 255, 255, 255 };
+				ImColor graphSecondaryLineCol = { 100, 100, 100, 255 };
+				// Axis'
+				drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMax.x + 1, innerMax.y }, graphLineCol);
+				drawList->AddLine({ innerMin.x - 1, innerMax.y }, { innerMin.x - 1, innerMin.y }, graphLineCol);
+				drawList->AddLine({ innerMax.x,     innerMax.y }, { innerMax.x,     innerMin.y }, graphLineCol);
+				// Extra lines
+				float frameGoalLineSpacing = 180.0f;
+				float timeGoalLineSpacing = 1000.0f / frameGoalLineSpacing;
+				int lineCount = (int)(maxTime / timeGoalLineSpacing);
+				int increment = (int)(lineCount / 10) + 1;
+
+				for (int i = 1; i <= lineCount; i += increment)
+				{
+					float lineY = innerMax.y - barHeight * timeGoalLineSpacing * i * scale;
+					drawList->AddLine({ innerMin.x, lineY }, { innerMax.x, lineY }, graphSecondaryLineCol);
+
+					int fpsVal = frameGoalLineSpacing / i;
+					std::string frameLabel = std::to_string(fpsVal) + "fps";
+					ImVec2 textSize = ImGui::CalcTextSize(frameLabel.c_str());
+					ImVec2 framePos = { innerMin.x - textSize.x - 5.0f, lineY - textSize.y / 2.0f };
+					drawList->AddText(framePos, graphLineCol, frameLabel.c_str());
+
+					int msVal = (float)(i / frameGoalLineSpacing) * 1000.0f;
+					std::string msLabel = std::to_string(msVal) + "ms";
+					textSize = ImGui::CalcTextSize(msLabel.c_str());
+					ImVec2 msPos = { innerMax.x + 5.0f, lineY - textSize.y / 2.0f };
+					drawList->AddText(msPos, graphLineCol, msLabel.c_str());
+				}
+
+				for (int i = 0; i < frameCount; i++)
+				{
+					int offset = cursor - frameCount + (i + 1);
+					if (offset < 0)
+						offset += frameCount;
+
+					if (frameTimeHistory[offset] == maxTime)
+						barColor = { 150, 10, 20, 255 };
+					else
+						barColor = { 100, 125, 240, 255 };
+
+					ImVec2 barMin = { (innerMin.x + barWidth * i),      (innerMax.y - barHeight * frameTimeHistory[offset] * scale) };
+					ImVec2 barMax = { (innerMin.x + barWidth * (i + 1)), innerMax.y };
+					drawList->AddRectFilled(barMin, barMax, barColor);
+				}
 			}
-
-			for (int i = 0; i < frameCount; i++)
+			else
 			{
-				int offset = cursor - frameCount + (i + 1);
-				if (offset < 0)
-					offset += frameCount;
+				ImVec2 pos = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
+				ImVec2 textSize = ImGui::CalcTextSize("The frame time graph is currently dissabled");
+				pos = { pos.x - textSize.x / 2.0f, pos.y - textSize.y / 2.0f };
+				drawList->AddText(pos, ImColor{ 255, 255, 255, 255 }, "The frame time graph is currently dissabled");
 
-				if (frameTimeHistory[offset] == maxTime)
-					barColor = { 150, 10, 20, 255 };
-				else
-					barColor = { 100, 125, 240, 255 };
-
-				ImVec2 barMin = { (innerMin.x + barWidth * i),      (innerMax.y - barHeight * frameTimeHistory[offset] * scale) };
-				ImVec2 barMax = { (innerMin.x + barWidth * (i + 1)), innerMax.y };
-				drawList->AddRectFilled(barMin, barMax, barColor);
+				if (ImGui::Button("Enable"))
+					enabled = true;
 			}
 
 			ImGui::EndChild();
@@ -899,10 +939,16 @@ namespace lost
 	private:
 		unsigned int cursor = 0; // The point which is considered address "199"
 
+		float averageFrameTime = 0.0f;
+
+		float clipFPS = 60.0f;
+
 		unsigned int frameCount = LOST_FRAME_RATE_HISTORY_COUNT;
 		bool enabled = LOST_FRAME_RATE_HISTORY_ENABLED;
 
 		float frameTimeHistory[LOST_FRAME_RATE_HISTORY_COUNT];
+
+		bool acceptNewInputs = true;
 
 		unsigned int maxPoint = 0;
 		float maxTime = 0.0f;
@@ -1815,6 +1861,12 @@ namespace lost
 		{
 			const std::vector<_Log>& logList = lost::_getLogList();
 
+			float offset = 0;
+			ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			ImGuiStyle& style = ImGui::GetStyle();
+
 			for (const _Log& log : logList)
 			{
 
@@ -1824,7 +1876,8 @@ namespace lost
 				switch (log.level)
 				{
 				case LOST_LOG_NONE:
-					continue; // No logs use this, skip it just in case
+					textColor = { 200, 200, 200 };
+					break;
 				case LOST_LOG_SUCCESS:
 					textColor = { 50, 255, 75 };
 					prefix = "[ Success ] ";
@@ -1846,7 +1899,14 @@ namespace lost
 					break;
 				}
 
-				ImGui::TextColored(textColor, (prefix + log.logText).c_str());
+				drawList->AddText(cursorPos, textColor, (prefix + log.logText).c_str());
+
+				ImVec2 textSize = ImGui::CalcTextSize((prefix + log.logText).c_str());
+				cursorPos.y += textSize.y + style.ItemSpacing.y;
+
+				if (ImGui::GetCursorPosX() < textSize.x + 2.0f * style.FramePadding.x)
+					ImGui::SetCursorPosX(textSize.x + 2.0f * style.FramePadding.x);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + textSize.y + style.ItemSpacing.y);
 			}
 		}
 		else
