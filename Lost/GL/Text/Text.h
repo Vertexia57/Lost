@@ -51,9 +51,13 @@ namespace lost
 	// Returns the height of what the text given would take up when rendered
 	float textHeight(const char* text, Font font, float scale);
 
+	// [!] TODO: Docs
+
 	// Renders text to the screen, using screenspace, allows for alignment
-	void renderText(const char* text, Font font, Vec2 position, float scale, int hAlign = 0, int vAlign = 0);
+	// shaderOverride allows for custom effects on fonts, note that the only color on font textures is the red channel, as text is grayscale
+	void renderText(const char* text, Font font, Vec2 position, float scale, int hAlign = 0, int vAlign = 0, Shader shaderOverride = nullptr);
 	// Renders text to the scene, using 3D space, allows for alignment
-	void renderTextPro3D(const char* text, Font font, Vec3 position, Vec3 rotation, Vec3 scale, int hAlign = 0, int vAlign = 0);
+	// shaderOverride allows for custom effects on fonts, note that the only color on font textures is the red channel, as text is grayscale
+	void renderTextPro3D(const char* text, Font font, Vec3 position, Vec3 rotation, Vec3 scale, int hAlign = 0, int vAlign = 0, Shader shaderOverride = nullptr);
 
 }

@@ -102,7 +102,8 @@ namespace lost
 
 	void _mouseMoveCallback(GLFWwindow* window, double xPos, double yPos)
 	{
-		inputManager.mousePosition = { (float)xPos, (float)yPos };
+		inputManager.mousePosition.x = xPos;
+		inputManager.mousePosition.y = yPos;
 	}
 
 	void _mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)

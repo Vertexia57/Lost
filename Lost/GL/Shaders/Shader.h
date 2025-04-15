@@ -159,23 +159,6 @@ namespace lost
 	// A reference to a shader
 	typedef _Shader* Shader;
 
-	class PPShader
-	{
-	public:
-		PPShader();
-		PPShader(Shader _shader);
-
-		void bind();
-
-		// Sets the bind override for the post processing shader
-		// This lets the user add extra code to the post processing shader like texture resizing
-		inline void setShaderBindOverride(void(*override)(PPShader*)) { m_ShaderBindOverride = override; };
-
-		Shader shader = nullptr;
-	private:
-		void(*m_ShaderBindOverride)(PPShader*) = nullptr;
-	};
-
 	/// <summary>
 	/// Set a uniform in the shader given. Automatically caches the uniform names and their locations.
 	/// </summary>

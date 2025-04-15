@@ -254,6 +254,7 @@
     <ClCompile Include="Lost\GL\Shaders\Shader.cpp" />
     <ClCompile Include="Lost\GL\Texture\Texture.cpp" />
     <ClCompile Include="Lost\GL\Renderer.cpp" />
+    <ClCompile Include="Lost\GL\Shaders\PostProcessingShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lost\DeltaTime.h" />
@@ -289,6 +290,7 @@
     <ClInclude Include="Lost\GL\Texture\Texture.h" />
     <ClInclude Include="Lost\GL\Renderer.h" />
     <ClInclude Include="Lost\State.h" />
+    <ClInclude Include="Lost\GL\Shaders\PostProcessingShader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Lost\GL\External\freetype.dll" />

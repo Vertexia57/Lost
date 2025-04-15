@@ -3,6 +3,8 @@
 #include "../Renderer.h"
 #include "../Shaders/ShaderCode.h"
 
+#include "../../DeltaTime.h"
+
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
@@ -118,23 +120,106 @@ namespace lost
 
 	Vec2 textBounds(const char* text, Font font, float scale)
 	{
-		// [!] TODO
-		return Vec2();
+		Vec2 min = { 0, 0 };
+		Vec2 max = { 0, 0 };
+
+		if (text != nullptr) // Valid string
+		{
+			if (*text != '\0') // Not empty
+			{
+				Vec2 pos = { 0, 0 };
+
+				for (int i = 0; text[i] != '\0'; i++)
+				{
+					Glyph& glyph = font->glyphs[text[i]];
+
+					Vec2 charMin = { pos.x - glyph.offset.x * scale, pos.y - glyph.offset.y * scale };
+					Vec2 charMax = charMin + Vec2{ (float)glyph.size.x * scale, (float)glyph.size.y * scale };
+
+					min.x = fminf(charMin.x, min.x);
+					min.y = fminf(charMin.y, min.y);
+					max.x = fmaxf(charMax.x, max.x);
+					max.y = fmaxf(charMax.y, max.y);
+
+					pos.x += glyph.advance.x * scale;
+					if (text[i] == '\n')
+					{
+						pos.x = 0.0f;
+						pos.y += font->fontHeight * scale;
+					}
+				}
+			}
+		}
+
+		return max - min;
 	}
 
 	float textWidth(const char* text, Font font, float scale)
 	{
-		// [!] TODO
-		return 0.0f;
+		float min = 0;
+		float max = 0;
+
+		if (text != nullptr) // Valid string
+		{
+			if (*text != '\0') // Not empty
+			{
+				float xPos = 0;
+
+				for (int i = 0; text[i] != '\0'; i++)
+				{
+					Glyph& glyph = font->glyphs[text[i]];
+
+					float charMin = xPos - glyph.offset.x * scale;
+					float charMax = charMin + (float)glyph.size.x * scale;
+
+					min = fminf(charMin, min);
+					max = fmaxf(charMax, max);
+
+					xPos += glyph.advance.x * scale;
+					if (text[i] == '\n')
+					{
+						xPos = 0.0f;
+					}
+				}
+			}
+		}
+
+		return max - min;
 	}
 
 	float textHeight(const char* text, Font font, float scale)
 	{
-		// [!] TODO
-		return 0.0f;
+		float min = 0;
+		float max = 0;
+
+		if (text != nullptr) // Valid string
+		{
+			if (*text != '\0') // Not empty
+			{
+				float yPos = 0;
+
+				for (int i = 0; text[i] != '\0'; i++)
+				{
+					Glyph& glyph = font->glyphs[text[i]];
+
+					float charMin = yPos - glyph.offset.y * scale;
+					float charMax = charMin + (float)glyph.size.y * scale;
+
+					min = fminf(charMin, min);
+					max = fmaxf(charMax, max);
+
+					if (text[i] == '\n')
+					{
+						yPos += font->fontHeight * scale;
+					}
+				}
+			}
+		}
+
+		return max - min;
 	}
 
-	void renderText(const char* text, Font font, Vec2 position, float scale, int hAlign, int vAlign)
+	void renderText(const char* text, Font font, Vec2 position, float scale, int hAlign, int vAlign, Shader shaderOverride)
 	{
 		if (text != nullptr) // Valid string
 		{
@@ -142,15 +227,28 @@ namespace lost
 			{
 				Vec2 origin = position;
 
+				float textW = 0;
+				float textH = 0;
+				if (hAlign != LOST_TEXT_ALIGN_LEFT && vAlign != LOST_TEXT_ALIGN_TOP) // Runs less code
+				{
+					Vec2 bounds = textBounds(text, font, scale);
+					textW = bounds.x;
+					textH = bounds.y;
+				}
+				else if (hAlign != LOST_TEXT_ALIGN_LEFT)
+					textW = (float)textWidth(text, font, scale);
+				else if (vAlign != LOST_TEXT_ALIGN_LEFT)
+					textH = (float)textHeight(text, font, scale);
+					
 				switch (hAlign)
 				{
 				case LOST_TEXT_ALIGN_LEFT:
 					break;
 				case LOST_TEXT_ALIGN_MIDDLE:
-					//origin.x -= (float)textWidth(text, scale, fontID) / 2.0f;
+					origin.x -= textW / 2.0f;
 					break;
 				case LOST_TEXT_ALIGN_RIGHT:
-					//origin.x -= (float)textWidth(text, scale, fontID);
+					origin.x -= textW;
 					break;
 				}
 
@@ -160,10 +258,10 @@ namespace lost
 					origin.y += (float)font->fontHeight * scale * 2.0f / 3.0f;
 					break;
 				case LOST_TEXT_ALIGN_MIDDLE:
-					//origin.y += (float)font->fontHeight * size * 2.0f / 3.0f - (float)textHeight(text, scale, fontID) / 4.0f;
+					origin.y += (float)font->fontHeight * scale * 2.0f / 3.0f - textH / 2.0f;
 					break;
 				case LOST_TEXT_ALIGN_BOTTOM:
-					//origin.y += (float)font->fontHeight * size * 2.0f / 3.0f - (float)textHeight(text, scale, fontID);
+					origin.y += (float)font->fontHeight * scale * 2.0f / 3.0f - textH;
 					break;
 				}
 
@@ -174,10 +272,10 @@ namespace lost
 					Glyph& glyph = font->glyphs[text[i]];
 
 					// Render textured rect of char
-					lost::renderRect(
-						{ pos.x - glyph.offset.x, pos.y - glyph.offset.y, (float)glyph.size.x, (float)glyph.size.y },
+					lost::_renderChar(
+						{ pos.x - glyph.offset.x * scale, pos.y - glyph.offset.y * scale, (float)glyph.size.x * scale, (float)glyph.size.y * scale },
 						{ (float)glyph.textureCoords.x / font->textureSize, (float)glyph.textureCoords.y / font->textureSize, (float)glyph.size.x / font->textureSize, (float)glyph.size.y / font->textureSize },
-						font->fontMaterial
+						font->fontMaterial, shaderOverride
 					);
 
 					pos.x += glyph.advance.x * scale;
@@ -191,7 +289,7 @@ namespace lost
 		}
 	}
 
-	void renderTextPro3D(const char* text, Font font, Vec3 position, Vec3 rotation, Vec3 scale, int hAlign, int vAlign)
+	void renderTextPro3D(const char* text, Font font, Vec3 position, Vec3 rotation, Vec3 scale, int hAlign, int vAlign, Shader shaderOverride)
 	{
 		// [!] TODO
 	}

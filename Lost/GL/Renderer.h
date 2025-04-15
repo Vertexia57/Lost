@@ -73,6 +73,16 @@ namespace lost
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _resizeFrameBuffers(int windowID, int width, int height);
 
+	// Renders a quad across the entire screen immediately, note this messes with the render queue
+	// if used improperly, so it's not advised to be used at all manually.
+	// Used when rendering post processing shaders
+	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
+	void _renderFullScreenQuadImmediate();
+
+	// Renders a quad to the screen, this is the same as renderRectPro but has a shader override
+	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
+	void _renderChar(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr, Shader shaderOverride = nullptr);
+
 #ifndef IMGUI_DISABLE
 	// Used within the renderer to know if it should run the ImGui functions
 	// Only defined when ImGui is enabled
@@ -101,6 +111,8 @@ namespace lost
 	// Depending on the current render mode of the renderer, renders the mesh given to the screen using the position and scale given
 	void renderMesh(Mesh mesh, std::vector<Material> materials, Vec3 pos, Vec3 rotation = { 0.0f, 0.0f, 0.0f }, Vec3 scale = { 1.0f, 1.0f, 1.0f });
 
+	// Renders a quad to the screen not caring for perspective or view
+	void renderRect(float x, float y, float w, float h, Material mat = nullptr);
 	// Renders a quad to the screen not caring for perspective or view
 	void renderRect(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr);
 	// Renders a quad to the screen not caring for perspective or view, allows for rotation
@@ -136,10 +148,6 @@ namespace lost
 
 	// Renders the queue of meshes stored in the instance queue
 	void renderInstanceQueue();
-
-	// Sets the current post processing shader
-	// Temporary
-	void setPostProcessingShader(PPShader shader);
 
 	// Starts the creation of a mesh which will be rendered once endMesh() is ran
 	
@@ -177,6 +185,8 @@ namespace lost
 
 	// Returns the OpenGL texture id of the render pass selected, by default getting the render texture of the window that's active
 	unsigned int getRenderTexture(unsigned int pass, unsigned int windowID = -1);
+	// Returns the OpenGL texture ids of the render passes used by a window, by default getting the render textures of the window that's active
+	const std::vector<unsigned int>& getRenderTextures(unsigned int windowID = -1);
 	// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
 	unsigned int getDepthTexture(unsigned int windowID = -1);
 
@@ -190,26 +200,30 @@ namespace lost
 			glm::mat4x4 modelTransform;
 			unsigned int depthTestFuncOverride;
 			bool depthWrite;
+			Shader shaderOverride;
 
-			bool operator==(const RawMeshBuffer& rhs) const
+			bool compare(const std::vector<Material>& _materials, const glm::mat4x4& _mvpTransform, const glm::mat4x4& _modelTransform, unsigned int _depthTestFuncOverride, bool _depthWrite, Shader _shaderOverride)
 			{
 				// Check if the material array is the same
-				if (materials.size() != rhs.materials.size())
+				if (materials.size() != _materials.size())
 					return false;
 
 				for (int i = 0; i < materials.size(); i++)
 				{
-					if (materials.at(i) != rhs.materials.at(i))
+					if (materials.at(i) != _materials.at(i))
 						return false;
 				}
 
-				// Compare transforms, we will only compare the MVP transform
-				// [?] Comparing the model transform may be important too, as the MVP may be the same but the model different
-				if (mvpTransform != rhs.mvpTransform)
+				if (shaderOverride != _shaderOverride)
 					return false;
 
 				// Compare depth settings
-				return (depthTestFuncOverride == rhs.depthTestFuncOverride || depthWrite == rhs.depthWrite);
+				if (depthTestFuncOverride != _depthTestFuncOverride && depthWrite != _depthWrite)
+					return false;
+
+				// Compare transforms, we will only compare the MVP transform
+				// [?] Comparing the model transform may be important too, as the MVP may be the same but the model different
+				return mvpTransform == _mvpTransform;
 			}
 		};
 	public:
@@ -228,13 +242,10 @@ namespace lost
 		// Resizes the framebuffers in the renderer to fit the new window size
 		void resizeFrameBuffers(int windowID, int width, int height);
 
-		// Sets the current post processing shader
-		void setPostProcessingShader(PPShader shader);
-
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
+		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
 
 		virtual void initRenderInstanceQueue();
 		// Renders the queue of meshes in the render queue
@@ -248,6 +259,8 @@ namespace lost
 
 		// Returns the render texture used by the pass at the index given
 		unsigned int getRenderTexture(unsigned int windowID, unsigned int pass);
+		// Returns the OpenGL texture ids of the render passes used by a window, by default getting the render textures of the window that's active
+		const std::vector<unsigned int>& getRenderTextures(unsigned int windowID = -1);
 		// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
 		unsigned int getDepthTexture(unsigned int windowID = -1);
 
@@ -275,6 +288,9 @@ namespace lost
 		void fillWindow(Color color);
 
 		void setPassClearColor(unsigned int passID, Color color);
+
+		// Used when rendering post processing shaders
+		void renderFullScreenQuadImmediate();
 
 		// Mesh Building
 
@@ -304,9 +320,6 @@ namespace lost
 		unsigned int VBO; // Vertex Buffer Object
 		unsigned int MBO; // Matrix Buffer Object
 		unsigned int EBO; // Element Buffer Object
-
-		PPShader m_CurrentPPShader;
-
 	};
 
 	class Renderer2D : public Renderer
@@ -316,9 +329,9 @@ namespace lost
 		virtual ~Renderer2D();
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
+		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
 
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();
@@ -358,9 +371,16 @@ namespace lost
 			unsigned int renderMode = LOST_MESH_TRIANGLES;
 			bool depthWrite = true;
 
+			Shader shaderOverride = nullptr;
+
 			bool depthComp(MeshRenderData& other) const
 			{
 				return other.depthVal > depthVal;
+			}
+
+			Shader getShader() const
+			{
+				return shaderOverride ? shaderOverride : material->getShader();
 			}
 		};
 
@@ -386,8 +406,8 @@ namespace lost
 			// Normal, has batching
 			if (lhs.material->getQueueLevel() != rhs.material->getQueueLevel())
 				return lhs.material->getQueueLevel() < rhs.material->getQueueLevel();
-			if (lhs.material->getShader() != rhs.material->getShader())
-				return lhs.material->getShader() < rhs.material->getShader();
+			if (lhs.getShader() != rhs.getShader())
+				return lhs.getShader() < rhs.getShader();
 			if (lhs.material != rhs.material)
 				return lhs.material < rhs.material;
 			if (lhs.mesh != rhs.mesh)
@@ -410,7 +430,7 @@ namespace lost
 		virtual ~Renderer3D();
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
 		
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();

@@ -90,6 +90,9 @@
     <ClCompile Include="Lost\Input\Input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Lost\GL\Shaders\PostProcessingShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lost\FileIO.h">
@@ -189,6 +192,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lost\Input\Input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\GL\Shaders\PostProcessingShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

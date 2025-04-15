@@ -58,6 +58,7 @@ namespace lost
 	ResourceManager<Texture>* _textureRM = nullptr;
 	ResourceManager<Material>* _materialRM = nullptr;
 	ResourceManager<Shader>* _shaderRM = nullptr;
+	ResourceManager<PostProcessingShader>* _postProcessingShaderRM = nullptr;
 	ResourceManager<Mesh>* _meshRM = nullptr;
 	ResourceManager<Font>* _fontRM = nullptr;
 
@@ -68,6 +69,7 @@ namespace lost
 		_shaderRM = new ResourceManager<Shader>("Shaders");
 		_meshRM = new ResourceManager<Mesh>("Meshes");
 		_fontRM = new ResourceManager<Font>("Fonts");
+		_postProcessingShaderRM = new ResourceManager<PostProcessingShader>("Post-processing Shaders");
 	}
 
 	void _destroyRMs()
@@ -76,6 +78,7 @@ namespace lost
 		delete _textureRM;
 		delete _materialRM;
 		delete _shaderRM;
+		delete _postProcessingShaderRM;
 		delete _meshRM;
 	}
 
@@ -388,6 +391,61 @@ namespace lost
 	void forceUnloadShader(Shader& shader)
 	{
 		_shaderRM->forceDestroyValueByValue(shader);
+	}
+
+	PostProcessingShader makePostProcessingShader(Shader shader, const char* id, void(*funcOverride)(PostProcessingShader))
+	{
+		lost::_PostProcessingShader* ppShader = nullptr;
+
+		if (!_postProcessingShaderRM->hasValue(id))
+		{
+			ppShader = new lost::_PostProcessingShader(shader, funcOverride);
+		}
+		else
+			ppShader = _postProcessingShaderRM->getValue(id);
+
+		_postProcessingShaderRM->addValue(ppShader, id);
+		return ppShader;
+	}
+
+	PostProcessingShader makePostProcessingShader(const std::vector<Shader>& shaders, const char* id, void(*funcOverride)(PostProcessingShader))
+	{
+		lost::_PostProcessingShader* ppShader = nullptr;
+
+		if (!_postProcessingShaderRM->hasValue(id))
+		{
+			ppShader = new lost::_PostProcessingShader(shaders, funcOverride);
+		}
+		else
+			ppShader = _postProcessingShaderRM->getValue(id);
+
+		_postProcessingShaderRM->addValue(ppShader, id);
+		return ppShader;
+	}
+
+	PostProcessingShader getPostProcessingShader(const char* id)
+	{
+		return _postProcessingShaderRM->getValue(id);
+	}
+
+	void destroyPostProcessingShader(const char* id)
+	{
+		_postProcessingShaderRM->destroyValue(id);
+	}
+
+	void destroyPostProcessingShader(PostProcessingShader shader)
+	{
+		_postProcessingShaderRM->destroyValueByValue(shader);
+	}
+
+	void forceDestroyPostProcessingShader(const char* id)
+	{
+		_postProcessingShaderRM->forceDestroyValue(id);
+	}
+
+	void forceDestroyPostProcessingShader(PostProcessingShader shader)
+	{
+		_postProcessingShaderRM->forceDestroyValueByValue(shader);
 	}
 
 #pragma endregion

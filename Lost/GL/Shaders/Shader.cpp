@@ -440,26 +440,6 @@ namespace lost
 			m_FragID = moduleID;
 	}
 
-	PPShader::PPShader()
-	{
-	}
-
-	PPShader::PPShader(Shader _shader)
-	{
-		shader = _shader;
-	}
-
-	void PPShader::bind()
-	{
-		if (m_ShaderBindOverride != nullptr)
-		{
-			m_ShaderBindOverride(this);
-			return;
-		}
-
-		shader->bind();
-	}
-
 	void setUniform(Shader shader, void* dataAt, const char* uniformName, unsigned int count, unsigned int offset)
 	{
 		shader->setUniform(dataAt, uniformName, count, offset);

@@ -26,7 +26,7 @@
 #define LOST_FRAME_RATE_HISTORY_COUNT 500 // Frame count to store
 #else
 #define LOST_FRAME_RATE_HISTORY_ENABLED false
-#define LOST_FRAME_RATE_HISTORY_COUNT 1 // Frame count to store
+#define LOST_FRAME_RATE_HISTORY_COUNT 500 // Frame count to store
 #endif
 
 namespace ImGui
@@ -1845,10 +1845,56 @@ namespace lost
 
 		for (typename std::map<std::string, DataCount<Font>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
+			const Font font = it->second.data;
+
 			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##FontPreview").c_str(), it->first.c_str());
 			if (isOpen)
 			{
 				ImGui::SeparatorText("Font Info");
+
+				ImGui::Text("ID:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), it->first.c_str());
+
+				ImGui::Text("Font Height:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", font->fontHeight);
+				ImGui::SameLine();
+				ImGui::TextDisabled("(?)");
+				ImGui::SetItemTooltip("This is essentially the quality of the font\nThe higher this number the larger the font was rendered onto the bitmap");
+
+				const char* textureID = lost::_getTextureID(font->fontTexture);
+				ImVec2 hoverToolTipSize = { 300.0f, 300.0f };
+
+				ImGui::Text("Texture:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), textureID);
+				if (ImGui::BeginItemTooltip())
+				{
+					ImGui::Image((ImTextureID)(intptr_t)(font->fontTexture->getTexture()), hoverToolTipSize);
+					ImGui::EndTooltip();
+				}
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+	}
+
+	void _imGuiDisplayPostProcessingShaderAssetList()
+	{
+		const std::map<std::string, DataCount<PostProcessingShader>>& dataMap = _postProcessingShaderRM->getDataMap();
+
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Post-processing Shaders Loaded...");
+			return;
+		}
+
+		for (typename std::map<std::string, DataCount<PostProcessingShader>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
+		{
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##PostProcessingShaderPreview").c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				ImGui::SeparatorText("Post-processing Shader Info");
 			}
 			ImGui::EndCollapsingHeaderEx(isOpen);
 		}
@@ -2110,7 +2156,7 @@ namespace lost
 		if (ImGui::BeginTabItem("Assets"))
 		{
 			ImGui::SeparatorText("Textures");
-			ImGui::Text("Currently loaded %i textures...", _textureRM->getValueCount());
+			ImGui::Text("Currently loaded %i texture(s)...", _textureRM->getValueCount());
 
 			bool isOpen = ImGui::BeginCollapsingHeaderEx("##textureAssetList", "View Textures");
 			if (isOpen)
@@ -2118,28 +2164,35 @@ namespace lost
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Materials");
-			ImGui::Text("Currently loaded %i materials...", _materialRM->getValueCount());
+			ImGui::Text("Currently loaded %i material(s)...", _materialRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("##materialAssetList", "View Materials");
 			if (isOpen)
 				_imGuiDisplayMaterialAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Meshes");
-			ImGui::Text("Currently loaded %i meshes...", _meshRM->getValueCount());
+			ImGui::Text("Currently loaded %i meshe(s)...", _meshRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("##meshAssetList", "View Meshes");
 			if (isOpen)
 				_imGuiDisplayMeshAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Shaders");
-			ImGui::Text("Currently loaded %i shaders...", _shaderRM->getValueCount());
+			ImGui::Text("Currently loaded %i shader(s)...", _shaderRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("##shaderAssetList", "View Shaders");
 			if (isOpen)
 				_imGuiDisplayShaderAssetList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
+			ImGui::SeparatorText("Post-processing Shaders");
+			ImGui::Text("Currently loaded %i post-processing shader(s)...", _postProcessingShaderRM->getValueCount());
+			isOpen = ImGui::BeginCollapsingHeaderEx("##ppShaderAssetList", "View Post-processing shaders");
+			if (isOpen)
+				_imGuiDisplayPostProcessingShaderAssetList();
+			ImGui::EndCollapsingHeaderEx(isOpen);
+
 			ImGui::SeparatorText("Fonts");
-			ImGui::Text("Currently loaded %i fonts...", _fontRM->getValueCount());
+			ImGui::Text("Currently loaded %i font(s)...", _fontRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("##fontAssetList", "View Fonts");
 			if (isOpen)
 				_imGuiDisplayFontAssetList();

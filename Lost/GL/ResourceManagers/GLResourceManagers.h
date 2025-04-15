@@ -3,6 +3,7 @@
 #include "../Texture/Texture.h"
 #include "../Texture/Material.h"
 #include "../Shaders/Shader.h"
+#include "../Shaders/PostProcessingShader.h"
 #include "../Mesh/Mesh.h"
 #include "../Text/Text.h"
 
@@ -11,6 +12,7 @@ namespace lost
 
 	extern ResourceManager<Texture>* _textureRM;
 	extern ResourceManager<Material>* _materialRM;
+	extern ResourceManager<PostProcessingShader>* _postProcessingShaderRM;
 	extern ResourceManager<Shader>* _shaderRM;
 	extern ResourceManager<Mesh>* _meshRM;
 	extern ResourceManager<Font>* _fontRM;
@@ -52,6 +54,17 @@ namespace lost
 	void   unloadShader(Shader& shader);
 	void   forceUnloadShader(const char* id);
 	void   forceUnloadShader(Shader& shader);
+
+	// [!] TODO: Docs
+	// When funcOverride is nullptr, it will use the default function, which just means the shader gets ran on the screen
+	// Can take more than one shader in the form of a vector, this allows more multipass post processing shaders like optimized blurs
+	PostProcessingShader makePostProcessingShader(Shader shader, const char* id, void (*funcOverride)(PostProcessingShader) = nullptr);
+	PostProcessingShader makePostProcessingShader(const std::vector<Shader>& shaders, const char* id, void (*funcOverride)(PostProcessingShader) = nullptr);
+	PostProcessingShader getPostProcessingShader(const char* id);
+	void				 destroyPostProcessingShader(const char* id);
+	void				 destroyPostProcessingShader(PostProcessingShader shader);
+	void				 forceDestroyPostProcessingShader(const char* id);
+	void				 forceDestroyPostProcessingShader(PostProcessingShader shader);
 
 	// Returns the name of the shader given
 	// NOTE: This is only used inside of the Lost engine, though it is static and has no effect

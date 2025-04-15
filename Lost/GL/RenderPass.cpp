@@ -108,8 +108,6 @@ namespace lost
 		buffers.reserve(textures.size());
 		for (int i = 0; i < textures.size(); i++)
 			buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-
-		//unsigned int buffers[1] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(buffers.size(), buffers.data());
 
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
