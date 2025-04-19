@@ -28,7 +28,7 @@
               "type": "markdown",
               "state": {
                 "file": "Lost Cheat Sheet.md",
-                "mode": "source",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
@@ -179,7 +179,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -193,10 +194,10 @@
   },
   "active": "142f17229d4eeaa0",
   "lastOpenFiles": [
-    "Rendering.md",
-    "Lost Cheat Sheet.md",
-    "Data Handling within Lost.md",
     "Shaders.md",
+    "Rendering.md",
+    "Data Handling within Lost.md",
+    "Lost Cheat Sheet.md",
     "Images/Default shader breakdown.png",
     "Images/ShaderLoadInfo.png",
     "Images/InitDebugInfo.png",

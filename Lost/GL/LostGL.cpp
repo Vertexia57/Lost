@@ -7,6 +7,7 @@
 #include "../DeltaTime.h"
 #include "Text/Text.h"
 #include "../Input/Input.h"
+#include "../Audio/Audio.h"
 
 namespace lost
 {
@@ -289,6 +290,7 @@ namespace lost
 	bool windowOpen()
 	{
 		lost::recalcDeltaTime();
+		lost::_updateAudio();
 
 		// Main loop, run closeCallbacks and update shouldClose list
 		for (int i = 0; i < _windowContexts.size(); i++) 

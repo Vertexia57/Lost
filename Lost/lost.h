@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "FileIO.h"
 #include "GL/LostGL.h"
+#include "Audio/Audio.h"
 #include "Input/Input.h"
 #include "DeltaTime.h"
 

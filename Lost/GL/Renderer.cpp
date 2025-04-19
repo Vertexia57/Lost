@@ -539,6 +539,7 @@ namespace lost
 			renderData.cullMode = (m_CullMode == LOST_CULL_AUTO ? materials[i]->getFaceCullMode() : m_CullMode);
 			renderData.renderMode = ((CompiledMeshData*)mesh)->meshRenderMode;
 			renderData.shaderOverride = shaderOverride;
+			renderData.ZSortMode = LOST_ZSORT_NORMAL;
 
 			debugLogIf(renderData.cullMode == LOST_CULL_AUTO, "Material had cull mode LOST_CULL_AUTO. Which shouldn't be used by materials, and only the renderer", LOST_LOG_WARNING);
 
@@ -766,6 +767,7 @@ namespace lost
 		// Render the quad with the texture
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 		glDrawElements(GL_TRIANGLES, ((CompiledMeshData*)standardQuad)->indexData.size(), GL_UNSIGNED_INT, 0);
 		glEnable(GL_DEPTH_TEST);
 

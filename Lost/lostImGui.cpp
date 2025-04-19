@@ -566,7 +566,7 @@ namespace lost
 
 #ifdef LOST_DEBUG_MODE
 		// Note for users
-		debugLogIf(lost::getWindows().size() > 1, "\n[ ImGui ] ImGui can only be used on one window!!\n[ ImGui ] You cannot run ImGui functions on any context other than the first one created!!\n", LOST_LOG_NONE);
+		debugLogIf(lost::getWindows().size() > 1, "\n[ ImGui ] ImGui can only be used on one window!!\n[ ImGui ] You cannot run ImGui functions on any context other than the first one created!\n[ ImGui ] This is not an error\n", LOST_LOG_NONE);
 
 		// Check if window is nullptr, crash the program if so
 		debugLogIf(window == nullptr, "Tried to initialize ImGui while there was no window", LOST_LOG_FATAL);
@@ -2171,7 +2171,7 @@ namespace lost
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::SeparatorText("Meshes");
-			ImGui::Text("Currently loaded %i meshe(s)...", _meshRM->getValueCount());
+			ImGui::Text("Currently loaded %i mesh(es)...", _meshRM->getValueCount());
 			isOpen = ImGui::BeginCollapsingHeaderEx("##meshAssetList", "View Meshes");
 			if (isOpen)
 				_imGuiDisplayMeshAssetList();

@@ -93,6 +93,21 @@
     <ClCompile Include="Lost\GL\Shaders\PostProcessingShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Lost\Audio\Audio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lost\Audio\Effects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lost\Audio\External\RtAudio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lost\Audio\ResourceManagers\AudioResourceManagers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lost\Audio\Sounds.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lost\FileIO.h">
@@ -195,6 +210,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lost\GL\Shaders\PostProcessingShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\Audio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\External\RtAudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\Effects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\ThreadSafeTemplate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\ResourceManagers\AudioResourceManagers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lost\Audio\Sounds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

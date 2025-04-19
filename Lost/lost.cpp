@@ -8,6 +8,7 @@ namespace lost
 		debugLog("Lost is currently in DEBUG mode, define LOST_RELEASE_MODE globally in project settings or compiler settings to remove extra debug features", LOST_LOG_INFO);
 		
 		lost::_initGL(rendererMode);
+		lost::_initAudio();
 
 #ifdef LOST_DEBUG_MODE
 		const lost::LostState& lostState = getLostState();
@@ -18,10 +19,12 @@ namespace lost
 			debugLog("    - " + lostState.currentBuffers[i].name + ", location: " + std::to_string(i) + ", clear color: (" + std::to_string(lostState.currentBuffers[i].defaultColor.x) + ", " + std::to_string(lostState.currentBuffers[i].defaultColor.y) + ", " + std::to_string(lostState.currentBuffers[i].defaultColor.z) + ", " + std::to_string(lostState.currentBuffers[i].defaultColor.w) + ")", LOST_LOG_NONE);
 		debugLog("\n==[ Lost Initialization Settings ]==\n", LOST_LOG_NONE);
 #endif
+
 	}
 
 	void exit()
 	{
+		lost::_exitAudio();
 		lost::_exitGL();
 	}
 

@@ -54,7 +54,7 @@ More detailed descriptions for these functions can be found [[here]].
 
 `Window`  is defined as `WindowContext*` and so if necessary you can access the values inside of `WindowContext` by dereferencing it.
 
-Any functions which have `Window context = nullptr` will automatically run on the first window created.
+Any functions which have `Window context = nullptr` will automatically run on the first window created or the active window being used, whichever makes more sense.
 This is to remove bloat from any programs that don't use more than one window, which is most of them.
 
 A lot of these functions do not need to ever be touched by the user, that is why they are split here.

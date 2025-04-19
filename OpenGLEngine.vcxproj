@@ -101,44 +101,44 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|Win32'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|Win32'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath);$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugOptimise|x64'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseOptimise|x64'">
     <ExternalIncludePath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.win64\include;$(SolutionDir)Lost\GL\External;$(SolutionDir)Lost\GL\External\glad\include;E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath);E:\Coding\OpenGLEngine\Lost\GL\External;$(ExternalIncludePath)</ExternalIncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Lost\GL\External\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Lost\GL\External\lib;$(SolutionDir)Lost\Audio\External\;$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -153,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -170,7 +170,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;WIN32;NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -185,7 +185,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <Optimization>Disabled</Optimization>
     </ClCompile>
@@ -201,7 +201,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -218,7 +218,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_WASAPI__;NDEBUG;_CONSOLE;LOST_RELEASE_MODE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -230,6 +230,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Lost\Audio\Audio.cpp" />
+    <ClCompile Include="Lost\Audio\Effects.cpp" />
+    <ClCompile Include="Lost\Audio\External\RtAudio.cpp" />
+    <ClCompile Include="Lost\Audio\ResourceManagers\AudioResourceManagers.cpp" />
+    <ClCompile Include="Lost\Audio\Sounds.cpp" />
     <ClCompile Include="Lost\DeltaTime.cpp" />
     <ClCompile Include="Lost\GL\Camera.cpp" />
     <ClCompile Include="Lost\GL\External\glad\src\glad.c" />
@@ -257,6 +262,12 @@
     <ClCompile Include="Lost\GL\Shaders\PostProcessingShader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lost\Audio\Audio.h" />
+    <ClInclude Include="Lost\Audio\Effects.h" />
+    <ClInclude Include="Lost\Audio\External\RtAudio.h" />
+    <ClInclude Include="Lost\Audio\ResourceManagers\AudioResourceManagers.h" />
+    <ClInclude Include="Lost\Audio\Sounds.h" />
+    <ClInclude Include="Lost\Audio\ThreadSafeTemplate.h" />
     <ClInclude Include="Lost\DeltaTime.h" />
     <ClInclude Include="Lost\GL\Camera.h" />
     <ClInclude Include="Lost\FileIO.h" />
