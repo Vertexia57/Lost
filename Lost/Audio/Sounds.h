@@ -49,15 +49,60 @@ namespace lost
 	class _SoundStream
 	{
 	public:
-		_SoundStream();
+		_SoundStream(unsigned int bufferSize = 512);
 		~_SoundStream();
 
 		void _initializeWithFile(const char* fileLocation);
-
-		void _initializeStream();
-
 		void _destroy();
+
+		inline const _SoundInfo& _getSoundInfo() const { return m_SoundInfo; };
+
+		// Only used by main thread
+		inline void _setActive(bool active) { m_Active = active; };
+		// Only used by main thread
+		inline bool getActive() const { return m_Active; };
+
+		// Ran by the audio thread
+		unsigned int _getCurrentByte();   // The current byte the sound stream is at
+		unsigned int _getDataByteSize();  // The size of the entire file's data section
+		unsigned int _getDataBlockSize(); // The size of the buffer in bytes
+		unsigned int _getBytesLeftToPlay();
+		unsigned int _getFormatFactor();
+		const char* _getNextDataBlock();
+
+		inline bool isPlaying()					{ return a_Playing.read();  };
+		inline void _setIsPlaying(bool playing) { a_Playing.write(playing); };
+
+		void _prepareStartPlay();
+
+		inline bool isFunctional() { return m_Functional; };
+		// Ran by the file load thread (NOT MAIN)
+		void _fillBuffer();
 	private:
+		FILE* m_File;
+
+		// Anything marked with an "a" at the start is used by the audio thread
+		// Anything marked with an "m" is a member variable that is only initialized when created
+		// Anything marked with an "f" is used by the file read thread
+
+		_SoundInfo m_SoundInfo;
+		unsigned int a_FormatFactor;
+
+		unsigned int a_CurrentByte;
+
+		_HaltWrite<bool> a_Playing; // Actively being used by the audio thread
+		bool m_Active;              // True even if it's in garbage
+
+		std::mutex a_FillingBufferMutex;
+		std::thread a_FillingBufferThread;
+
+		bool a_UsingBBuffer;
+		unsigned int m_BufferSize; // The amount of samples in the buffer
+		unsigned int m_ByteSize;   // The size of the buffer in bytes
+		char* a_Buffer; // Twice the length of bufferSize, using dual buffering
+
+		// Local
+		bool m_Functional;
 	};
 
 	typedef _Sound* Sound;

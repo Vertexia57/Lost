@@ -1,6 +1,11 @@
 #include "Sounds.h"
 #include "../Log.h"
 
+#include "Audio.h"
+
+#include <thread>
+#include <mutex>
+
 namespace lost
 {
 
@@ -134,9 +139,8 @@ namespace lost
 			{
 				m_Functional = true;
 				m_SoundInfo.channelCount = waveData.channelCount;
-				debugLogIf(m_SoundInfo.channelCount != 2, ".wav file: \"" + std::string(fileLocation) + "\" wasn't stereo", LOST_LOG_WARNING);
 				m_SoundInfo.sampleRate = waveData.sampleRate;
-				m_SoundInfo.sampleCount = waveData.dataChunkSize / (waveData.bitsPerSample / 8);
+				m_SoundInfo.sampleCount = waveData.dataChunkSize / (waveData.bitsPerSample / 8) / waveData.channelCount;
 
 				m_SoundInfo.byteCount = waveData.dataChunkSize;
 				m_SoundInfo.sampleSize = waveData.blockAlign;
@@ -158,12 +162,141 @@ namespace lost
 		m_Functional = false;
 	}
 
-	_SoundStream::_SoundStream()
+	_SoundStream::_SoundStream(unsigned int bufferSize)
+		: m_BufferSize(bufferSize)
+		, a_UsingBBuffer(false)
+		, m_File(nullptr)
+		, m_Functional(false)
+		, m_SoundInfo{ 0, 0, 0, 0, 0, 0 }
+		, a_Playing{ false }
+		, m_Active(false)
 	{
+		a_Buffer = nullptr;
+		a_CurrentByte = 0;
 	}
 
 	_SoundStream::~_SoundStream()
 	{
+		_destroy();
+	}
+
+	void _SoundStream::_initializeWithFile(const char* fileLocation)
+	{
+		_RIFFWAVEHeaderData waveData = _loadWaveFile(fileLocation);
+		if (waveData.loadedFile) // This is nullptr if it failed
+		{
+			m_Functional = true;
+			m_SoundInfo.channelCount = waveData.channelCount;
+			m_SoundInfo.sampleRate = waveData.sampleRate;
+			m_SoundInfo.sampleCount = waveData.dataChunkSize / (waveData.bitsPerSample / 8) / waveData.channelCount;
+
+			m_SoundInfo.byteCount = waveData.dataChunkSize;
+			m_SoundInfo.sampleSize = waveData.blockAlign;
+			m_SoundInfo.bitsPerSample = waveData.bitsPerSample;
+			m_SoundInfo.format = m_SoundInfo.bitsPerSample >> 3;
+
+			m_File = waveData.loadedFile;
+
+			m_ByteSize = m_BufferSize * m_SoundInfo.channelCount * (m_SoundInfo.bitsPerSample / 8);
+			a_Buffer = new char[m_ByteSize * 2]; // * 2 because we are dual buffering, this just helps with "hot-memory"
+
+			// Bytes per channel's samples
+			unsigned int soundFormat = m_SoundInfo.format;
+			// The bit selected is the amount of bytes per channel sample
+			unsigned int audioFormat = _getAudioHandlerFormat();
+
+			a_FormatFactor = soundFormat - (log2(audioFormat) + 1);
+
+			// Fill the buffer with the starting information
+			fread_s(a_Buffer, m_ByteSize, sizeof(char), m_ByteSize, m_File);
+			a_UsingBBuffer = true;
+		}
+	}
+
+	void _SoundStream::_destroy()
+	{
+		if (a_Buffer)
+		{
+			delete[] a_Buffer;
+			a_Buffer = nullptr;
+		}
+		m_Functional = false;
+		fclose(m_File);
+	}
+
+	unsigned int _SoundStream::_getCurrentByte()
+	{
+		return a_CurrentByte;
+	}
+
+	unsigned int _SoundStream::_getDataByteSize()
+	{
+		return m_SoundInfo.byteCount;
+	}
+
+	unsigned int _SoundStream::_getDataBlockSize()
+	{
+		return m_ByteSize;
+	}
+
+	unsigned int _SoundStream::_getBytesLeftToPlay()
+	{
+		return m_SoundInfo.byteCount - a_CurrentByte;
+	}
+
+	unsigned int _SoundStream::_getFormatFactor()
+	{
+		return a_FormatFactor;
+	}
+
+	const char* _SoundStream::_getNextDataBlock()
+	{
+		// Check if the other buffer is currently being filled
+
+		if (a_FillingBufferMutex.try_lock())
+		{
+			// If it isn't be immediately unlock it and start a _fillBuffer thread
+			// which then locks it until it's filled the other buffer
+
+			// Increase current byte by buffer size
+			if (m_SoundInfo.byteCount > a_CurrentByte + m_ByteSize)
+				a_CurrentByte += m_ByteSize;
+			else
+				a_CurrentByte = m_SoundInfo.byteCount;
+
+			// Swap buffers and start a fill buffer thread
+			a_UsingBBuffer = !a_UsingBBuffer;
+
+			a_FillingBufferMutex.unlock();
+			a_FillingBufferThread = std::thread(&_SoundStream::_fillBuffer, this);
+			a_FillingBufferThread.detach();
+		}
+
+		// If it is we reuse the old data, this does cause audio glitching
+
+		// If using B buffer return B buffer, otherwise return A buffer
+		return a_UsingBBuffer ? a_Buffer + m_ByteSize : a_Buffer;
+	}
+
+	void _SoundStream::_prepareStartPlay()
+	{
+		fseek(m_File, 44, SEEK_SET);
+		fread_s(a_Buffer, m_ByteSize, sizeof(char), m_ByteSize, m_File);
+		a_CurrentByte = 0;
+		a_UsingBBuffer = true;
+	}
+
+	void _SoundStream::_fillBuffer()
+	{
+		a_FillingBufferMutex.lock();
+
+		// This just gets the start byte of the buffer to start writing in (The opposite of the get function)
+		char* writeStartByte = a_UsingBBuffer ? a_Buffer : a_Buffer + m_ByteSize;
+
+		// We don't need to check for the end of file and finish the sound here, that will be done in the audio processing
+		fread_s(writeStartByte, m_ByteSize, sizeof(char), m_ByteSize, m_File);
+
+		a_FillingBufferMutex.unlock();
 	}
 
 }

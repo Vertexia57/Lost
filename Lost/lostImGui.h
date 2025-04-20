@@ -6,7 +6,7 @@ namespace lost
 {
 
 	// Sets up ImGui for the window given, if no window was given uses the first window created 
-	void setupImGui();
+	void setupImGui(float scale = 1.0f);
 
 	// Closes ImGui for the window given, if no window was given uses the first window created 
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)

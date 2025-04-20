@@ -1,6 +1,7 @@
 #include <Windows.h>
 
 #include "GL/LostGL.h"
+#include "Audio/Audio.h"
 
 #include "lostImGui.h"
 
@@ -558,7 +559,7 @@ namespace lost
 		return a < b ? a : b;
 	}
 
-	void lost::setupImGui()
+	void lost::setupImGui(float scale)
 	{
 #ifndef IMGUI_DISABLE
 		// Get first window, will be nullptr if no window was created
@@ -595,7 +596,7 @@ namespace lost
 		window->_hasImGui = true;
 		_setUsingImGui(true);
 
-		ImFont* font = io.Fonts->AddFontFromMemoryCompressedTTF(ImGui::proggy_clean_ttf_compressed_data, ImGui::proggy_clean_ttf_compressed_size, 18.0f);
+		ImFont* font = io.Fonts->AddFontFromMemoryCompressedTTF(ImGui::proggy_clean_ttf_compressed_data, ImGui::proggy_clean_ttf_compressed_size, 16.0f * scale);
 		io.Fonts->Build();
 		ImGui::GetIO().FontDefault = font;
 
@@ -832,7 +833,7 @@ namespace lost
 
 			int borderRound = 8;
 			int roundingCorners = ImDrawFlags_RoundCornersAll;
-			int graphHeight = 500;
+			int graphHeight = 300;
 
 			ImColor fillColor = { 4, 4, 7, 255 };
 			ImColor borderColor = { 0x40, 0x40, 0x49, 255 };
@@ -1967,6 +1968,124 @@ namespace lost
 		}
 	}
 
+	void _imGuiDisplaySoundList()
+	{
+		ImGui::SeparatorText("Sounds (Loaded onto RAM)");
+
+		const std::map<std::string, DataCount<Sound>>& dataMap = _soundRM->getDataMap();
+
+		if (dataMap.empty())
+		{
+			ImGui::TextDisabled("No Sounds Loaded...");
+		}
+
+		for (typename std::map<std::string, DataCount<Sound>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
+		{
+			const Sound sound = it->second.data;
+
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##SoundPreview").c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				ImGui::SeparatorText("Sound Info");
+
+				ImGui::Text("ID:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), it->first.c_str());
+
+				// Playtime in seconds
+				float playTime = (float)sound->_getSoundInfo().sampleCount / (float)sound->_getSoundInfo().sampleRate;
+
+				int seconds = int(fmodf(playTime, 60));
+				int minutes = int(playTime / 60.0f);
+
+				ImGui::Text("Playtime:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), (seconds < 10 ? "%i:0%i" : "%i:%i"), minutes, seconds);
+
+				ImGui::SeparatorText("Detailed Sound Info");
+
+				ImGui::Text("Functional:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), sound->isFunctional() ? "Yes" : "No");
+
+				ImGui::Text("Sample Rate:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", sound->_getSoundInfo().sampleRate);
+
+				ImGui::Text("Sample Count:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", sound->_getSoundInfo().sampleCount);
+
+				ImGui::Text("Channels:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", sound->_getSoundInfo().channelCount);
+
+				ImGui::Text("Format:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i Bit PCM", sound->_getSoundInfo().format << 3);
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+
+		ImGui::SeparatorText("Sound Streams");
+
+		const std::map<std::string, DataCount<SoundStream>>& streamDataMap = _streamRM->getDataMap();
+
+		if (streamDataMap.empty())
+		{
+			ImGui::TextDisabled("No Sound Streams Loaded...");
+		}
+
+		for (typename std::map<std::string, DataCount<SoundStream>>::const_iterator it = streamDataMap.begin(); it != streamDataMap.end(); it++)
+		{
+			const SoundStream stream = it->second.data;
+
+			bool isOpen = ImGui::BeginCollapsingHeaderEx((it->first + "##SoundPreview").c_str(), it->first.c_str());
+			if (isOpen)
+			{
+				ImGui::SeparatorText("Sound Info");
+
+				ImGui::Text("ID:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), it->first.c_str());
+
+				// Playtime in seconds
+				float playTime = (float)stream->_getSoundInfo().sampleCount / (float)stream->_getSoundInfo().sampleRate;
+
+				int seconds = int(fmodf(playTime, 60));
+				int minutes = int(playTime / 60.0f);
+
+				ImGui::Text("Playtime:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), (seconds < 10 ? "%i:0%i" : "%i:%i"), minutes, seconds);
+
+				ImGui::SeparatorText("Detailed Sound Info");
+
+				ImGui::Text("Functional:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), stream->isFunctional() ? "Yes" : "No");
+
+				ImGui::Text("Sample Rate:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", stream->_getSoundInfo().sampleRate);
+
+				ImGui::Text("Sample Count:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", stream->_getSoundInfo().sampleCount);
+
+				ImGui::Text("Channels:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i", stream->_getSoundInfo().channelCount);
+
+				ImGui::Text("Format:");
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(135, 191, 255, 255), "%i Bit PCM", stream->_getSoundInfo().format << 3);
+			}
+			ImGui::EndCollapsingHeaderEx(isOpen);
+		}
+
+	}
+
 	void imGuiDisplayProgramInfo()
 	{
 		ImGuiWindowFlags flags = 0;
@@ -2196,6 +2315,13 @@ namespace lost
 			isOpen = ImGui::BeginCollapsingHeaderEx("##fontAssetList", "View Fonts");
 			if (isOpen)
 				_imGuiDisplayFontAssetList();
+			ImGui::EndCollapsingHeaderEx(isOpen);
+
+			ImGui::SeparatorText("Sounds");
+			ImGui::Text("Currently loaded %i sound(s) and %i sound stream(s)...", _soundRM->getValueCount(), _streamRM->getValueCount());
+			isOpen = ImGui::BeginCollapsingHeaderEx("##soundAssetList", "View Sounds");
+			if (isOpen)
+				_imGuiDisplaySoundList();
 			ImGui::EndCollapsingHeaderEx(isOpen);
 
 			ImGui::EndTabItem();

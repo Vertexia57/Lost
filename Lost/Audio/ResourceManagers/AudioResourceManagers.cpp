@@ -4,6 +4,8 @@
 #include <iostream>
 #include <algorithm>
 
+#include "../Audio.h"
+
 template <typename Out>
 static void split(const std::string& s, char delim, Out result) {
 	std::istringstream iss(s);
@@ -55,15 +57,18 @@ namespace lost
 {
 
 	ResourceManager<Sound>* _soundRM = nullptr;
+	ResourceManager<SoundStream>* _streamRM = nullptr;
 
 	void _initAudioRMs()
 	{
 		_soundRM = new ResourceManager<Sound>("Sounds");
+		_streamRM = new ResourceManager<SoundStream>("Sound Streams");
 	}
 
 	void _destroyAudioRMs()
 	{
 		delete _soundRM;
+		delete _streamRM;
 	}
 
 	Sound loadSound(const char* soundLoc, const char* id)
@@ -108,6 +113,50 @@ namespace lost
 	void forceUnloadSound(Sound& sound)
 	{
 		_soundRM->forceDestroyValueByValue(sound);
+	}
+
+	SoundStream loadSoundStream(const char* soundLoc, const char* id)
+	{
+		lost::SoundStream sound = nullptr;
+
+		// If "id" is nullptr set it to the filename
+		if (!id) id = soundLoc;
+
+		if (!_streamRM->hasValue(id))
+		{
+			sound = new _SoundStream(_getAudioHandlerBufferSize());
+			sound->_initializeWithFile(soundLoc);
+		}
+		else
+			sound = _streamRM->getValue(id);
+
+		_streamRM->addValue(sound, id);
+		return sound;
+	}
+
+	SoundStream getSoundStream(const char* id)
+	{
+		return _streamRM->getValue(id);
+	}
+
+	void unloadSoundStream(const char* id)
+	{
+		_streamRM->destroyValue(id);
+	}
+
+	void unloadSoundStream(SoundStream& sound)
+	{
+		_streamRM->destroyValueByValue(sound);
+	}
+
+	void forceUnloadSoundStream(const char* id)
+	{
+		_streamRM->forceDestroyValue(id);
+	}
+
+	void forceUnloadSoundStream(SoundStream& sound)
+	{
+		_streamRM->forceDestroyValueByValue(sound);
 	}
 
 }

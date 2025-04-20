@@ -5,6 +5,8 @@
 #include "External/RtAudio.h"
 #include "ThreadSafeTemplate.h"
 
+// [!] TODO: Docs
+
 namespace lost
 {
 	class _Sound;
@@ -13,8 +15,10 @@ namespace lost
 	{
 		unsigned int currentByte;    // The sample the playback is currently at
 		unsigned int dataCount;      // The amount of bytes left in the data
-		unsigned int formatFactor;   // The amount of bits to shift the playback of this sound
+		unsigned int format;         // The amount of bytes in each channel's samples;
+		int			 formatFactor;   // The amount of bits to shift the playback of this sound
 		unsigned int bytesPerSample; // The amount of bytes in one channel's sample
+		unsigned int channelCount;   // The amount of channels
 		const char* data; // This is not normalized audio, it is the bit representation of the audio, not caring for format
 
 		void* extraData = nullptr;
@@ -37,20 +41,23 @@ namespace lost
 		_HaltRead<bool> a_Playing; // Read/Write
 
 		// Playback data
-		unsigned int m_FormatFactor;
+		int m_FormatFactor;
 	};
 
 	void _initAudio();
 	void _exitAudio();
 	void _updateAudio();
-
-	void setAudioOutputDevice();
+	unsigned int _getAudioHandlerFormat();
+	unsigned int _getAudioHandlerBufferSize(); // Returns the size of the nBufferSize of the audio buffer
 
 	// Returns a pointer to the sound being played, you can check if the sound has finished playing or not by dereferencing it
 	const PlaybackSound* playSound(Sound sound); // [!] TODO: Volume and Panning 
 	// Stops the sound being played
 	void stopSound(const PlaybackSound* sound);
+	void setSoundPaused(const PlaybackSound* sound, bool paused);
 
+	void playSoundStream(SoundStream soundStream);
+	void stopSoundStream(SoundStream soundStream);
 }
 //
 //// Two-channel sawtooth wave generator.
