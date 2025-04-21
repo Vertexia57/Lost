@@ -170,6 +170,7 @@ namespace lost
 		, m_SoundInfo{ 0, 0, 0, 0, 0, 0 }
 		, a_Playing{ false }
 		, m_Active(false)
+		, a_LoopCount(0)
 	{
 		a_Buffer = nullptr;
 		a_CurrentByte = 0;
@@ -224,29 +225,36 @@ namespace lost
 		fclose(m_File);
 	}
 
-	unsigned int _SoundStream::_getCurrentByte()
+	unsigned int _SoundStream::_getCurrentByte() const
 	{
 		return a_CurrentByte;
 	}
 
-	unsigned int _SoundStream::_getDataByteSize()
+	unsigned int _SoundStream::_getDataByteSize() const
 	{
 		return m_SoundInfo.byteCount;
 	}
 
-	unsigned int _SoundStream::_getDataBlockSize()
+	unsigned int _SoundStream::_getDataBlockSize() const
 	{
 		return m_ByteSize;
 	}
 
-	unsigned int _SoundStream::_getBytesLeftToPlay()
+	unsigned int _SoundStream::_getBytesLeftToPlay() const
 	{
+		if (a_LoopCount > 0)
+			return UINT_MAX;
 		return m_SoundInfo.byteCount - a_CurrentByte;
 	}
 
-	unsigned int _SoundStream::_getFormatFactor()
+	unsigned int _SoundStream::_getFormatFactor() const
 	{
 		return a_FormatFactor;
+	}
+
+	unsigned int _SoundStream::_getLoopCount() const
+	{
+		return a_LoopCount;
 	}
 
 	const char* _SoundStream::_getNextDataBlock()
@@ -260,9 +268,20 @@ namespace lost
 
 			// Increase current byte by buffer size
 			if (m_SoundInfo.byteCount > a_CurrentByte + m_ByteSize)
+			{
 				a_CurrentByte += m_ByteSize;
+			}
 			else
-				a_CurrentByte = m_SoundInfo.byteCount;
+			{
+				if (a_LoopCount > 0)
+				{
+					a_CurrentByte += m_ByteSize;
+					a_CurrentByte -= m_SoundInfo.byteCount;
+					a_LoopCount--;
+				}
+				else
+					a_CurrentByte = m_SoundInfo.byteCount;
+			}
 
 			// Swap buffers and start a fill buffer thread
 			a_UsingBBuffer = !a_UsingBBuffer;
@@ -278,12 +297,13 @@ namespace lost
 		return a_UsingBBuffer ? a_Buffer + m_ByteSize : a_Buffer;
 	}
 
-	void _SoundStream::_prepareStartPlay()
+	void _SoundStream::_prepareStartPlay(unsigned int loopCount)
 	{
 		fseek(m_File, 44, SEEK_SET);
 		fread_s(a_Buffer, m_ByteSize, sizeof(char), m_ByteSize, m_File);
 		a_CurrentByte = 0;
 		a_UsingBBuffer = true;
+		a_LoopCount = loopCount;
 	}
 
 	void _SoundStream::_fillBuffer()
@@ -293,8 +313,18 @@ namespace lost
 		// This just gets the start byte of the buffer to start writing in (The opposite of the get function)
 		char* writeStartByte = a_UsingBBuffer ? a_Buffer : a_Buffer + m_ByteSize;
 
-		// We don't need to check for the end of file and finish the sound here, that will be done in the audio processing
-		fread_s(writeStartByte, m_ByteSize, sizeof(char), m_ByteSize, m_File);
+		// Loop processing
+		bool reachEndOfData = m_SoundInfo.byteCount < a_CurrentByte + m_ByteSize;
+		unsigned int readCount = reachEndOfData ? m_SoundInfo.byteCount - a_CurrentByte : m_ByteSize;
+
+		fread_s(writeStartByte, readCount, sizeof(char), readCount, m_File);
+
+		// Loop back to the start of the data in the file if looping
+		if (reachEndOfData && a_LoopCount > 0)
+		{
+			fseek(m_File, 44, SEEK_SET);
+			fread_s(writeStartByte + readCount, m_ByteSize - readCount, sizeof(char), m_ByteSize - readCount, m_File);
+		}
 
 		a_FillingBufferMutex.unlock();
 	}

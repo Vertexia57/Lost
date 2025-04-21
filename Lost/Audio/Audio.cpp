@@ -103,7 +103,7 @@ namespace lost
 				break;
 			}
 
-			unsigned int bytesLeft = playbackData.dataCount - playbackData.currentByte;
+			unsigned int bytesLeft = playbackData.loopCount > 0 ? UINT_MAX : playbackData.dataCount - playbackData.currentByte;
 			if (bytesLeft == 0)
 				continue;
 			
@@ -116,12 +116,17 @@ namespace lost
 			{
 				for (int channel = 0; channel < channelCount; channel++)
 				{
-					int outSample = 0;
+					unsigned int sampleOffset = playbackData.currentByte + (sample * inChannelCount + (inChannelCount == 2 ? channel : 0)) * inFormatSize;
 
-					if (inChannelCount == 1)
-						outSample = (*(int*)(playbackData.data + playbackData.currentByte + sample * inFormatSize) & mask);
-					else
-						outSample = (*(int*)(playbackData.data + playbackData.currentByte + (sample * channelCount + channel) * inFormatSize) & mask);
+					if (playbackData.loopCount > 0 && sampleOffset > playbackData.dataCount)
+					{
+						playbackData.currentByte -= playbackData.dataCount;
+						sampleOffset = sampleOffset % playbackData.dataCount;
+						if (playbackData.loopCount != UINT_MAX)
+							playbackData.loopCount--;
+					}
+
+					int outSample = (*(int*)(playbackData.data + sampleOffset) & mask);
 
 					if (formatFactor >= 0)
 						outData[sample * channelCount + channel] += (_ChannelQuality)(outSample >> (formatFactor * 8));
@@ -132,7 +137,7 @@ namespace lost
 
 			if (playbackData.currentByte + sampleWrite * inFormatSize / channelCount * inChannelCount < playbackData.dataCount - 1)
 				playbackData.currentByte += sampleWrite * inFormatSize / channelCount * inChannelCount;
-			else
+			else if (playbackData.loopCount == 0)
 			{
 				playbackData.currentByte = playbackData.dataCount;
 				sounds.at(i)->_setIsPlaying();
@@ -249,10 +254,11 @@ namespace lost
 		RtAudio::StreamParameters& getOutputStreamParams() { return m_OutputParameters; }
 		RtAudioFormat getAudioFormat() const { return m_Format; };
 		
-		const PlaybackSound* playSound(const _Sound* sound) // [!] TODO: Add Volume and Pan
+		// Loopcount - when UINT_MAX / -1 - will cause the sound to loop forever, only stopped by stopSound
+		PlaybackSound* playSound(_Sound* sound, unsigned int loopCount) // [!] TODO: Add Volume and Pan
 		{
 			std::mutex& soundMutex = m_SamplerPassInInfo.activeSounds.getMutex();
-			PlaybackSound* pbSound = new PlaybackSound(sound);
+			PlaybackSound* pbSound = new PlaybackSound(sound, loopCount);
 
 			soundMutex.lock();
 			m_SamplerPassInInfo.activeSounds.getWriteRef().push_back(pbSound);
@@ -293,6 +299,29 @@ namespace lost
 			}
 		}
 
+		void stopSounds(const _Sound* sound)
+		{
+			std::mutex& soundMutex = m_SamplerPassInInfo.activeSounds.getMutex();
+
+			unsigned int location = -1;
+			PlaybackSound* ref = nullptr;
+			std::vector<PlaybackSound*>& writeRef = m_SamplerPassInInfo.activeSounds.getWriteRef();
+			for (int i = writeRef.size() - 1; i >= 0; i--)
+			{
+				if (writeRef.at(i)->getParentSound() == sound)
+				{
+					location = i;
+					ref = writeRef.at(i);
+
+					m_GarbageSounds.push_back({ 0.0, ref });
+					soundMutex.lock();
+					writeRef.erase(writeRef.begin() + location);
+					m_SamplerPassInInfo.activeSounds.forceDirty();
+					soundMutex.unlock();
+				}
+			}
+		}
+
 		void endSounds(float deltaTime)
 		{
 			std::mutex& soundMutex = m_SamplerPassInInfo.activeSounds.getMutex();
@@ -320,11 +349,33 @@ namespace lost
 			}
 		}
 
-		void playSoundStream(_SoundStream* soundStream)
+		bool hasSound(const PlaybackSound* sound)
+		{
+			std::vector<PlaybackSound*>& writeRef = m_SamplerPassInInfo.activeSounds.getWriteRef();
+			for (int i = 0; i < writeRef.size(); i++)
+			{
+				if (writeRef.at(i) == sound)
+					return true;
+			}
+			return false;
+		}
+
+		bool hasSoundStream(const SoundStream sound)
+		{
+			std::vector<_SoundStream*>& writeRef = m_SamplerPassInInfo.activeStreams.getWriteRef();
+			for (int i = 0; i < writeRef.size(); i++)
+			{
+				if (writeRef.at(i) == sound)
+					return true;
+			}
+			return false;
+		}
+
+		void playSoundStream(_SoundStream* soundStream, unsigned int loopCount)
 		{
 			std::mutex& streamMutex = m_SamplerPassInInfo.activeStreams.getMutex();
 
-			soundStream->_prepareStartPlay();
+			soundStream->_prepareStartPlay(loopCount);
 			soundStream->_setActive(true);
 			soundStream->_setIsPlaying(true);
 
@@ -398,6 +449,7 @@ namespace lost
 			endSoundStreams(deltaTime);
 		}
 
+
 	private:
 		RtAudio m_Dac;
 		RtAudio::StreamParameters m_OutputParameters;
@@ -417,7 +469,7 @@ namespace lost
 
 	AudioHandler _audioHandler;
 
-	PlaybackSound::PlaybackSound(const _Sound* soundPlaying)
+	PlaybackSound::PlaybackSound(_Sound* soundPlaying, unsigned int loopCount)
 		: a_Playing{ true }
 	{
 		// Bytes per channel's samples
@@ -434,6 +486,9 @@ namespace lost
 		a_PlaybackData.formatFactor = m_FormatFactor;
 		a_PlaybackData.format = soundPlaying->_getSoundInfo().format;
 		a_PlaybackData.channelCount = soundPlaying->_getSoundInfo().channelCount;
+		a_PlaybackData.loopCount = loopCount;
+
+		m_ParentSound = soundPlaying;
 	}
 
 	void _initAudio()
@@ -463,9 +518,11 @@ namespace lost
 		return _audioHandler.getBufferFrameCount();
 	}
 
-	const PlaybackSound* playSound(Sound sound)
+	PlaybackSound* playSound(Sound sound, unsigned int loopCount)
 	{
-		return _audioHandler.playSound(sound);
+		if (sound->isFunctional())
+			return _audioHandler.playSound(sound, loopCount);
+		return nullptr;
 	}
 
 	void stopSound(const PlaybackSound* sound)
@@ -473,17 +530,36 @@ namespace lost
 		return _audioHandler.stopSound(sound);
 	}
 
-	void playSoundStream(SoundStream soundStream)
+	void stopSound(Sound sound)
+	{
+		return _audioHandler.stopSounds(sound);
+	}
+
+	bool isSoundPlaying(PlaybackSound* sound)
+	{
+		if (!_audioHandler.hasSound(sound))
+			return false;
+		return sound->isPlaying();
+	}
+
+	void playSoundStream(SoundStream soundStream, unsigned int loopCount)
 	{
 		// Check if it's already being played
 		if (!soundStream->getActive() && soundStream->isFunctional())
 		{
-			_audioHandler.playSoundStream(soundStream);
+			_audioHandler.playSoundStream(soundStream, loopCount);
 		}
 	}
 
 	void stopSoundStream(SoundStream soundStream)
 	{
 		_audioHandler.stopSoundStream(soundStream);
+	}
+
+	bool isSoundStreamPlaying(SoundStream sound)
+	{
+		if (!_audioHandler.hasSoundStream(sound))
+			return false;
+		return sound->isPlaying();
 	}
 }

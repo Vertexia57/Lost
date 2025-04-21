@@ -63,17 +63,18 @@ namespace lost
 		inline bool getActive() const { return m_Active; };
 
 		// Ran by the audio thread
-		unsigned int _getCurrentByte();   // The current byte the sound stream is at
-		unsigned int _getDataByteSize();  // The size of the entire file's data section
-		unsigned int _getDataBlockSize(); // The size of the buffer in bytes
-		unsigned int _getBytesLeftToPlay();
-		unsigned int _getFormatFactor();
+		unsigned int _getCurrentByte() const;   // The current byte the sound stream is at
+		unsigned int _getDataByteSize() const;  // The size of the entire file's data section
+		unsigned int _getDataBlockSize() const; // The size of the buffer in bytes
+		unsigned int _getBytesLeftToPlay() const;
+		unsigned int _getFormatFactor() const;
+		unsigned int _getLoopCount() const;
 		const char* _getNextDataBlock();
 
 		inline bool isPlaying()					{ return a_Playing.read();  };
 		inline void _setIsPlaying(bool playing) { a_Playing.write(playing); };
 
-		void _prepareStartPlay();
+		void _prepareStartPlay(unsigned int loopCount);
 
 		inline bool isFunctional() { return m_Functional; };
 		// Ran by the file load thread (NOT MAIN)
@@ -92,6 +93,7 @@ namespace lost
 
 		_HaltWrite<bool> a_Playing; // Actively being used by the audio thread
 		bool m_Active;              // True even if it's in garbage
+		unsigned int a_LoopCount;
 
 		std::mutex a_FillingBufferMutex;
 		std::thread a_FillingBufferThread;

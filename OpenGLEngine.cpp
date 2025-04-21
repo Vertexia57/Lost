@@ -17,9 +17,8 @@ int main()
 	// Initializes ImGui
 	lost::setupImGui();
 
-	lost::SoundStream sound = lost::loadSoundStream("data/sound.wav");
-	lost::playSoundStream(sound);
-	lost::Sound sound2 = lost::loadSound("data/sound2.wav");
+	lost::Sound sound = lost::loadSound("data/MainMenu.wav");
+	lost::playSound(sound, -1);
 
 	int currentColor = 0;
 
@@ -59,11 +58,6 @@ int main()
 			if (currentColor >= 5)
 				currentColor = 0;
 		}
-
-		if (lost::getMouseTapped(LOST_MOUSE_MIDDLE))
-			lost::playSoundStream(sound);
-		if (lost::getMouseTapped(LOST_MOUSE_LEFT))
-			lost::playSound(sound2);
 
 		lost::setFillColor(colorList[currentColor % 5].r, colorList[currentColor % 5].g, colorList[currentColor % 5].b);
 		lost::renderCircle(lost::getMousePosition(), 40);

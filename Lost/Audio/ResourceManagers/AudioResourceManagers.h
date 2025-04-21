@@ -8,6 +8,8 @@ namespace lost
 	extern ResourceManager<Sound>* _soundRM;
 	extern ResourceManager<SoundStream>* _streamRM;
 
+	// [!] TODO: Docs
+	
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	extern void _initAudioRMs();
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)

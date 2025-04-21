@@ -5,7 +5,6 @@
 #include "External/RtAudio.h"
 #include "ThreadSafeTemplate.h"
 
-// [!] TODO: Docs
 
 namespace lost
 {
@@ -14,6 +13,7 @@ namespace lost
 	struct _PlaybackData
 	{
 		unsigned int currentByte;    // The sample the playback is currently at
+		unsigned int loopCount;      // The amount of times the sound should loop -1 / UINT_MAX
 		unsigned int dataCount;      // The amount of bytes left in the data
 		unsigned int format;         // The amount of bytes in each channel's samples;
 		int			 formatFactor;   // The amount of bits to shift the playback of this sound
@@ -28,12 +28,14 @@ namespace lost
 	class PlaybackSound
 	{
 	public:
-		PlaybackSound(const _Sound* soundPlaying);
+		PlaybackSound(_Sound* soundPlaying, unsigned int loopCount = 0); // if loop count is -1 or UINT_MAX it will loop forever
 
 		inline bool isPlaying() { return a_Playing.read(); };
 
 		inline void _setIsPlaying() { a_Playing.write(false); };
 		inline _PlaybackData& _getPlaybackData() { return a_PlaybackData; };
+
+		inline _Sound* getParentSound() const { return m_ParentSound; };
 	private:
 		// Any variables marked with a_ are accessed by the audio thread, otherwise they are main thread only
 		_PlaybackData a_PlaybackData; // Read only
@@ -42,6 +44,8 @@ namespace lost
 
 		// Playback data
 		int m_FormatFactor;
+
+		_Sound* m_ParentSound;
 	};
 
 	void _initAudio();
@@ -50,14 +54,21 @@ namespace lost
 	unsigned int _getAudioHandlerFormat();
 	unsigned int _getAudioHandlerBufferSize(); // Returns the size of the nBufferSize of the audio buffer
 
+	// [!] TODO: Docs
+	// 
 	// Returns a pointer to the sound being played, you can check if the sound has finished playing or not by dereferencing it
-	const PlaybackSound* playSound(Sound sound); // [!] TODO: Volume and Panning 
+	PlaybackSound* playSound(Sound sound, unsigned int loopCount = 0); // [!] TODO: Volume and Panning 
 	// Stops the sound being played
 	void stopSound(const PlaybackSound* sound);
+	// Stops the all sounds playing that are using this sound, use the PlaybackSound return to manage individual ones
+	void stopSound(Sound sound);
+	bool isSoundPlaying(PlaybackSound* sound);
+
 	void setSoundPaused(const PlaybackSound* sound, bool paused);
 
-	void playSoundStream(SoundStream soundStream);
+	void playSoundStream(SoundStream soundStream, unsigned int loopCount = 0);
 	void stopSoundStream(SoundStream soundStream);
+	bool isSoundStreamPlaying(SoundStream sound);
 }
 //
 //// Two-channel sawtooth wave generator.

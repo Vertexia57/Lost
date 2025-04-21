@@ -13,7 +13,7 @@ namespace lost
 	extern Shader _defaultShader;
 
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
-	void _initGL(unsigned int rendererMode);
+	void _initGL(unsigned int rendererMode); // [!] TODO: Docs
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _initOpenGL();
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
