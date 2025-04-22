@@ -28,12 +28,18 @@ namespace lost
 	class PlaybackSound
 	{
 	public:
-		PlaybackSound(_Sound* soundPlaying, unsigned int loopCount = 0); // if loop count is -1 or UINT_MAX it will loop forever
+		PlaybackSound(_Sound* soundPlaying, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0); // if loop count is -1 or UINT_MAX it will loop forever
 
 		inline bool isPlaying() { return a_Playing.read(); };
 
 		inline void _setIsPlaying() { a_Playing.write(false); };
 		inline _PlaybackData& _getPlaybackData() { return a_PlaybackData; };
+
+		inline float _getVolume() { return a_Volume.read(); };
+		inline void _setVolume(float volume) { a_Volume.write(volume); }
+
+		inline float _getPanning() { return a_Panning.read(); };
+		inline void _setPanning(float panning) { a_Panning.write(fminf(fmaxf(panning, -1.0f), 1.0f)); }
 
 		inline _Sound* getParentSound() const { return m_ParentSound; };
 	private:
@@ -41,6 +47,9 @@ namespace lost
 		_PlaybackData a_PlaybackData; // Read only
 		// Halt read is used here so that the main thread waits for the audio thread to finish processing
 		_HaltRead<bool> a_Playing; // Read/Write
+
+		_HaltWrite<float> a_Volume;
+		_HaltWrite<float> a_Panning;
 
 		// Playback data
 		int m_FormatFactor;
@@ -55,20 +64,56 @@ namespace lost
 	unsigned int _getAudioHandlerBufferSize(); // Returns the size of the nBufferSize of the audio buffer
 
 	// [!] TODO: Docs
-	// 
-	// Returns a pointer to the sound being played, you can check if the sound has finished playing or not by dereferencing it
-	PlaybackSound* playSound(Sound sound, unsigned int loopCount = 0); // [!] TODO: Volume and Panning 
+
+	// Sets the master volume of the audio in the engine, effects every sound
+	void setMasterVolume(float volume);
+	float getMasterVolume();
+
+	// [==========================]
+	//       Sound Functions
+	// [==========================]
+
+	/// <summary>
+	/// Returns a pointer to the sound being played, you can check if the sound has finished playing or not by running isSoundPlaying()
+	/// </summary>
+	/// <param name="sound">The sound to play</param>
+	/// <param name="volume">The volume of the sound</param>
+	/// <param name="panning">The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center</param>
+	/// <param name="loopCount">The amount of times to loop, setting this as -1 or UINT_MAX loops it forever. It can be stopped with stopSound</param>
+	/// <returns></returns>
+	PlaybackSound* playSound(Sound sound, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0); // [!] TODO: Volume and Panning 
+	
 	// Stops the sound being played
 	void stopSound(const PlaybackSound* sound);
 	// Stops the all sounds playing that are using this sound, use the PlaybackSound return to manage individual ones
 	void stopSound(Sound sound);
-	bool isSoundPlaying(PlaybackSound* sound);
-
 	void setSoundPaused(const PlaybackSound* sound, bool paused);
 
-	void playSoundStream(SoundStream soundStream, unsigned int loopCount = 0);
+	void setSoundVolume(PlaybackSound* sound, float volume);
+	// The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center
+	void setSoundPanning(PlaybackSound* sound, float panning);
+
+	bool isSoundPlaying(PlaybackSound* sound);
+
+	// [==========================]
+	//    Sound Stream Functions
+	// [==========================]
+
+	/// <summary>
+	/// Starts playing a sound stream, a sound stream can only be played once at a time unlike sounds
+	/// </summary>
+	/// <param name="soundStream">The sound to play</param>
+	/// <param name="volume">The volume of the sound</param>
+	/// <param name="panning">The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center</param>
+	/// <param name="loopCount">The amount of times to loop, setting this as -1 or UINT_MAX loops it forever</param>
+	/// <returns></returns>
+	void playSoundStream(SoundStream soundStream, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0);
 	void stopSoundStream(SoundStream soundStream);
 	bool isSoundStreamPlaying(SoundStream sound);
+
+	void setSoundStreamVolume(SoundStream sound, float volume);
+	// The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center
+	void setSoundStreamPanning(SoundStream sound, float panning);
 }
 //
 //// Two-channel sawtooth wave generator.

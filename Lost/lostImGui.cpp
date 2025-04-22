@@ -957,6 +957,9 @@ namespace lost
 
 	std::map<std::string, UniformSelection> uniformSelectors;
 
+	lost::PlaybackSound* lastSoundPlayed = nullptr;
+	lost::SoundStream lastSoundStreamPlayed = nullptr;
+
 	// Is ran inside of a child window
 	void _imGuiDisplayTextureAssetList()
 	{
@@ -1978,6 +1981,19 @@ namespace lost
 		{
 			ImGui::TextDisabled("No Sounds Loaded...");
 		}
+		else
+		{
+			if (!lost::isSoundPlaying(lastSoundPlayed))
+				lastSoundPlayed = nullptr;
+
+			ImGui::BeginDisabled(lastSoundPlayed == nullptr);
+			if (ImGui::Button("Stop last sound played", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				lost::stopSound(lastSoundPlayed);
+				lastSoundPlayed = nullptr;
+			}
+			ImGui::EndDisabled();
+		}
 
 		for (typename std::map<std::string, DataCount<Sound>>::const_iterator it = dataMap.begin(); it != dataMap.end(); it++)
 		{
@@ -1987,6 +2003,13 @@ namespace lost
 			if (isOpen)
 			{
 				ImGui::SeparatorText("Sound Info");
+
+				if (ImGui::Button("Play Sound", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+				{
+					if (lastSoundPlayed)
+						lost::stopSound(lastSoundPlayed);
+					lastSoundPlayed = lost::playSound(sound);
+				}
 
 				ImGui::Text("ID:");
 				ImGui::SameLine();
@@ -2035,6 +2058,19 @@ namespace lost
 		{
 			ImGui::TextDisabled("No Sound Streams Loaded...");
 		}
+		else
+		{
+			if (!lost::isSoundStreamPlaying(lastSoundStreamPlayed))
+				lastSoundStreamPlayed = nullptr;
+
+			ImGui::BeginDisabled(lastSoundStreamPlayed == nullptr);
+			if (ImGui::Button("Stop last sound stream played", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				lost::stopSoundStream(lastSoundStreamPlayed);
+				lastSoundStreamPlayed = nullptr;
+			}
+			ImGui::EndDisabled();
+		}
 
 		for (typename std::map<std::string, DataCount<SoundStream>>::const_iterator it = streamDataMap.begin(); it != streamDataMap.end(); it++)
 		{
@@ -2044,6 +2080,14 @@ namespace lost
 			if (isOpen)
 			{
 				ImGui::SeparatorText("Sound Info");
+
+				if (ImGui::Button("Play Sound Stream", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+				{
+					if (lastSoundStreamPlayed)
+						lost::stopSoundStream(lastSoundStreamPlayed);
+					lastSoundStreamPlayed = stream;
+					lost::playSoundStream(stream);
+				}
 
 				ImGui::Text("ID:");
 				ImGui::SameLine();

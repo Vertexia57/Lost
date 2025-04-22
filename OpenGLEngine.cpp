@@ -17,8 +17,8 @@ int main()
 	// Initializes ImGui
 	lost::setupImGui();
 
-	lost::Sound sound = lost::loadSound("data/MainMenu.wav");
-	lost::playSound(sound, -1);
+	lost::Sound sound = lost::loadSound("data/sound2.wav");
+	lost::SoundStream sound2 = lost::loadSoundStream("data/Compass.wav");
 
 	int currentColor = 0;
 
@@ -30,43 +30,18 @@ int main()
 	{
 		lost::beginFrame();
 
+		time += lost::getDeltaTime();
+
 		lost::setFillColor(100, 100, 100);
 		
-		// Loop over the x until we hit the right side of the window
-		for (int x = 0; x < lost::getWidth(); x += 50)
+		int squareSize = 50;
+		for (int x = 0; x < lost::getWidth(); x += squareSize)
 		{
-			lost::renderLine(x, 0, x, lost::getHeight());
+			for (int y = 0; y < lost::getHeight(); y += squareSize)
+			{
+				lost::renderRect(x, y, squareSize, squareSize);
+			}
 		}
-
-		// Loop over the y until we hit the bottom of the window
-		for (int y = 0; y < lost::getHeight(); y += 50)
-		{
-			lost::renderLine(0, y, lost::getWidth(), y);
-		}
-
-		lost::Color colorList[5] = {
-			{ 255, 255, 255 },
-			{ 255, 0,   0   },
-			{ 0,   255, 0   },
-			{ 0,   0,   255 },
-			{ 100, 100, 100 }
-		};
-
-		if (lost::getMouseTapped(LOST_MOUSE_LEFT))
-		{
-			currentColor++;
-			if (currentColor >= 5)
-				currentColor = 0;
-		}
-
-		lost::setFillColor(colorList[currentColor % 5].r, colorList[currentColor % 5].g, colorList[currentColor % 5].b);
-		lost::renderCircle(lost::getMousePosition(), 40);
-
-		lost::setFillColor(colorList[(currentColor + 1) % 5].r, colorList[(currentColor + 1) % 5].g, colorList[(currentColor + 1) % 5].b);
-		lost::renderCircle(lost::getMousePosition(), 32);
-
-		lost::setFillColor(colorList[(currentColor + 2) % 5].r, colorList[(currentColor + 2) % 5].g, colorList[(currentColor + 2) % 5].b);
-		lost::renderCircle(lost::getMousePosition(), 24);
 
 		lost::imGuiDisplayProgramInfo();
 		lost::endFrame();

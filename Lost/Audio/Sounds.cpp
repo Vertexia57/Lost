@@ -171,6 +171,8 @@ namespace lost
 		, a_Playing{ false }
 		, m_Active(false)
 		, a_LoopCount(0)
+		, a_Volume{ 1.0f }
+		, a_Panning{ 0.0f }
 	{
 		a_Buffer = nullptr;
 		a_CurrentByte = 0;
@@ -277,7 +279,8 @@ namespace lost
 				{
 					a_CurrentByte += m_ByteSize;
 					a_CurrentByte -= m_SoundInfo.byteCount;
-					a_LoopCount--;
+					if (a_LoopCount != UINT_MAX)
+						a_LoopCount--;
 				}
 				else
 					a_CurrentByte = m_SoundInfo.byteCount;
@@ -297,13 +300,15 @@ namespace lost
 		return a_UsingBBuffer ? a_Buffer + m_ByteSize : a_Buffer;
 	}
 
-	void _SoundStream::_prepareStartPlay(unsigned int loopCount)
+	void _SoundStream::_prepareStartPlay(float volume, float panning, unsigned int loopCount)
 	{
 		fseek(m_File, 44, SEEK_SET);
 		fread_s(a_Buffer, m_ByteSize, sizeof(char), m_ByteSize, m_File);
 		a_CurrentByte = 0;
 		a_UsingBBuffer = true;
 		a_LoopCount = loopCount;
+		a_Volume.write(volume);
+		a_Panning.write(panning);
 	}
 
 	void _SoundStream::_fillBuffer()

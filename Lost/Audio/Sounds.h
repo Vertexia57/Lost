@@ -69,12 +69,16 @@ namespace lost
 		unsigned int _getBytesLeftToPlay() const;
 		unsigned int _getFormatFactor() const;
 		unsigned int _getLoopCount() const;
+		inline float _getVolume() { return a_Volume.read(); };
+		inline float _getPanning() { return a_Panning.read(); };
+		inline void  _setVolume(float volume) { a_Volume.write(volume); };
+		inline void  _setPanning(float panning) { a_Panning.write(panning); };
 		const char* _getNextDataBlock();
 
 		inline bool isPlaying()					{ return a_Playing.read();  };
 		inline void _setIsPlaying(bool playing) { a_Playing.write(playing); };
 
-		void _prepareStartPlay(unsigned int loopCount);
+		void _prepareStartPlay(float volume, float panning, unsigned int loopCount);
 
 		inline bool isFunctional() { return m_Functional; };
 		// Ran by the file load thread (NOT MAIN)
@@ -94,6 +98,9 @@ namespace lost
 		_HaltWrite<bool> a_Playing; // Actively being used by the audio thread
 		bool m_Active;              // True even if it's in garbage
 		unsigned int a_LoopCount;
+
+		_HaltWrite<float> a_Volume;
+		_HaltWrite<float> a_Panning;
 
 		std::mutex a_FillingBufferMutex;
 		std::thread a_FillingBufferThread;

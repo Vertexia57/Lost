@@ -58,8 +58,10 @@ namespace lost
 		// which is 32 bits/an integer
 
 		SamplerPassInInfo* inData = (SamplerPassInInfo*)data;
-
-		unsigned int channelCount = 2;
+		
+		// Will ALWAYS be 2!!!
+		const unsigned int channelCount = 2;
+		const float volumeDecrement = 1.0f / 4.0f; // The second number is prefered to be a power of 2
 
 		_ChannelQuality* outData = (_ChannelQuality*)outputBuffer;
 		unsigned int outDataCapacity = sizeof(_ChannelQuality) * nBufferFrames * channelCount;
@@ -112,12 +114,21 @@ namespace lost
 			bool fillsBuffer = nBufferFrames * channelCount < bytesLeft / inFormatSize * channelCount / inChannelCount;
 			unsigned int sampleWrite = fillsBuffer ? nBufferFrames * channelCount : bytesLeft / inFormatSize * channelCount / inChannelCount;
 
+			float volume = sounds.at(i)->_getVolume() * volumeDecrement * getMasterVolume();
+			float panning = fmaxf(fminf(sounds.at(i)->_getPanning(), 1.0f), -1.0f);
+
 			for (int sample = 0; sample < sampleWrite / channelCount; sample++)
 			{
+
+				_ChannelQuality channelOutputs[channelCount];
+
+				// Calculate the per channel data
 				for (int channel = 0; channel < channelCount; channel++)
 				{
+					// Get the amount of bytes to go through the data for this sample
 					unsigned int sampleOffset = playbackData.currentByte + (sample * inChannelCount + (inChannelCount == 2 ? channel : 0)) * inFormatSize;
 
+					// Loop sound read offset
 					if (playbackData.loopCount > 0 && sampleOffset > playbackData.dataCount)
 					{
 						playbackData.currentByte -= playbackData.dataCount;
@@ -126,15 +137,28 @@ namespace lost
 							playbackData.loopCount--;
 					}
 
+					// The value of the sample cast to an integer, doesn't scale to fit range
 					int outSample = (*(int*)(playbackData.data + sampleOffset) & mask);
 
+					// Scale output and store it for pan processing, apply volume here
 					if (formatFactor >= 0)
-						outData[sample * channelCount + channel] += (_ChannelQuality)(outSample >> (formatFactor * 8));
+						channelOutputs[channel] = (_ChannelQuality)(outSample >> (formatFactor * 8)) * volume;
 					else
-						outData[sample * channelCount + channel] += (_ChannelQuality)(outSample << (-formatFactor * 8));
+						channelOutputs[channel] = (_ChannelQuality)(outSample << (-formatFactor * 8)) * volume;
 				}
+
+				// This is the amount to merge the right channel into the left channel
+				float leftPanAmount  = -fminf(panning, 0.0f) * PI / 2.0f;
+				float rightPanAmount =  fmaxf(panning, 0.0f) * PI / 2.0f;
+
+				// Apply pan
+				outData[sample * channelCount + 0] += channelOutputs[0] * fmaxf(sinf(leftPanAmount),  0.0f);
+				outData[sample * channelCount + 1] += channelOutputs[0] * fmaxf(cosf(leftPanAmount),  0.0f);
+				outData[sample * channelCount + 1] += channelOutputs[1] * fmaxf(sinf(rightPanAmount), 0.0f);
+				outData[sample * channelCount + 0] += channelOutputs[1] * fmaxf(cosf(rightPanAmount), 0.0f);
 			}
 
+			// Seek to the next data we need to read, if it's the end of the data and we've finished looping, stop the sound
 			if (playbackData.currentByte + sampleWrite * inFormatSize / channelCount * inChannelCount < playbackData.dataCount - 1)
 				playbackData.currentByte += sampleWrite * inFormatSize / channelCount * inChannelCount;
 			else if (playbackData.loopCount == 0)
@@ -182,30 +206,52 @@ namespace lost
 				break;
 			}
 
+			// Figure out how many samples to write (samples * channels)
 			unsigned int bytesLeft = stream._getBytesLeftToPlay();
-			unsigned int byteWrite = nBufferFrames * channelCount < bytesLeft / inFormatSize ? nBufferFrames * channelCount : bytesLeft / inFormatSize;
+			unsigned int sampleWrite = nBufferFrames * channelCount < bytesLeft / inFormatSize ? nBufferFrames * channelCount : bytesLeft / inFormatSize;
 
+			// Get data in const char* form
 			const char* data = stream._getNextDataBlock();
 
-			for (int sample = 0; sample < byteWrite / channelCount; sample++)
+			// Get volume and panning info
+			float volume = stream._getVolume();
+			float panning = fmaxf(fminf(stream._getPanning(), 1.0f), -1.0f);
+
+			for (int sample = 0; sample < sampleWrite / channelCount; sample++)
 			{
+				_ChannelQuality channelOutputs[channelCount];
+
+				// Get sample data
 				for (int channel = 0; channel < channelCount; channel++)
 				{
-					int outSample = 0;
+					// Get the amount of bytes to go through the data for this sample
+					unsigned int sampleOffset = (sample * inChannelCount + (inChannelCount == 2 ? channel : 0)) * inFormatSize;
 
-					if (inChannelCount == 1)
-						outSample = (*(int*)(data + sample * inFormatSize) & mask) >> (formatFactor * 8);
-					else
-						outSample = (*(int*)(data + (sample * channelCount + channel) * inFormatSize) & mask);
+					// We don't need to do loop processing here as it is done by _getNextDataBlock()
 
+					// The value of the sample cast to an integer, doesn't scale to fit range
+					int outSample = (*(int*)(data + sampleOffset) & mask);
+
+					// Scale output and store it for pan processing, apply volume here
 					if (formatFactor >= 0)
-						outData[sample * channelCount + channel] += (_ChannelQuality)(outSample >> (formatFactor * 8));
+						channelOutputs[channel] = (_ChannelQuality)(outSample >> (formatFactor * 8)) * volume;
 					else
-						outData[sample * channelCount + channel] += (_ChannelQuality)(outSample << (-formatFactor * 8));
+						channelOutputs[channel] = (_ChannelQuality)(outSample << (-formatFactor * 8)) * volume;
 				}
+
+				// This is the amount to merge the right channel into the left channel
+				float leftPanAmount = -fminf(panning, 0.0f) * PI / 2.0f;
+				float rightPanAmount = fmaxf(panning, 0.0f) * PI / 2.0f;
+
+				// Apply pan
+				outData[sample * channelCount + 0] += channelOutputs[0] * fmaxf(sinf(leftPanAmount), 0.0f);
+				outData[sample * channelCount + 1] += channelOutputs[0] * fmaxf(cosf(leftPanAmount), 0.0f);
+				outData[sample * channelCount + 1] += channelOutputs[1] * fmaxf(sinf(rightPanAmount), 0.0f);
+				outData[sample * channelCount + 0] += channelOutputs[1] * fmaxf(cosf(rightPanAmount), 0.0f);
 			}
 
-			if (byteWrite == bytesLeft / inFormatSize)
+			// If it's the end of the data and we've finished looping, stop the sound
+			if (sampleWrite == bytesLeft / inFormatSize)
 				stream._setIsPlaying(false);
 		}
 		return 0;
@@ -255,10 +301,10 @@ namespace lost
 		RtAudioFormat getAudioFormat() const { return m_Format; };
 		
 		// Loopcount - when UINT_MAX / -1 - will cause the sound to loop forever, only stopped by stopSound
-		PlaybackSound* playSound(_Sound* sound, unsigned int loopCount) // [!] TODO: Add Volume and Pan
+		PlaybackSound* playSound(_Sound* sound, float volume, float panning, unsigned int loopCount) // [!] TODO: Add Volume and Pan
 		{
 			std::mutex& soundMutex = m_SamplerPassInInfo.activeSounds.getMutex();
-			PlaybackSound* pbSound = new PlaybackSound(sound, loopCount);
+			PlaybackSound* pbSound = new PlaybackSound(sound, volume, panning, loopCount);
 
 			soundMutex.lock();
 			m_SamplerPassInInfo.activeSounds.getWriteRef().push_back(pbSound);
@@ -371,11 +417,11 @@ namespace lost
 			return false;
 		}
 
-		void playSoundStream(_SoundStream* soundStream, unsigned int loopCount)
+		void playSoundStream(_SoundStream* soundStream, float volume, float panning, unsigned int loopCount)
 		{
 			std::mutex& streamMutex = m_SamplerPassInInfo.activeStreams.getMutex();
 
-			soundStream->_prepareStartPlay(loopCount);
+			soundStream->_prepareStartPlay(volume, panning, loopCount);
 			soundStream->_setActive(true);
 			soundStream->_setIsPlaying(true);
 
@@ -449,6 +495,15 @@ namespace lost
 			endSoundStreams(deltaTime);
 		}
 
+		void setMasterVolume(float volume)
+		{
+			a_MasterVolume.write(volume);
+		}
+
+		float getMasterVolume()
+		{
+			return a_MasterVolume.read();
+		}
 
 	private:
 		RtAudio m_Dac;
@@ -461,6 +516,8 @@ namespace lost
 		RtAudioFormat m_Format;
 		unsigned int m_BufferFrames = 1024;
 
+		_HaltWrite<float> a_MasterVolume = 1.0f;
+
 		// lifetime + playbackSound*
 		std::vector<std::pair<double, PlaybackSound*>> m_GarbageSounds;
 		std::vector<std::pair<double, _SoundStream*>> m_GarbageStreams;
@@ -469,8 +526,10 @@ namespace lost
 
 	AudioHandler _audioHandler;
 
-	PlaybackSound::PlaybackSound(_Sound* soundPlaying, unsigned int loopCount)
+	PlaybackSound::PlaybackSound(_Sound* soundPlaying, float volume, float panning, unsigned int loopCount)
 		: a_Playing{ true }
+		, a_Volume{ volume }
+		, a_Panning{ fmaxf(fminf(panning, 1.0f), -1.0f) }
 	{
 		// Bytes per channel's samples
 		unsigned int soundFormat = soundPlaying->_getSoundInfo().format;
@@ -518,10 +577,20 @@ namespace lost
 		return _audioHandler.getBufferFrameCount();
 	}
 
-	PlaybackSound* playSound(Sound sound, unsigned int loopCount)
+	void setMasterVolume(float volume)
+	{
+		_audioHandler.setMasterVolume(fmaxf(volume, 0.0f));
+	}
+
+	float getMasterVolume()
+	{
+		return _audioHandler.getMasterVolume();
+	}
+
+	PlaybackSound* playSound(Sound sound, float volume, float panning, unsigned int loopCount)
 	{
 		if (sound->isFunctional())
-			return _audioHandler.playSound(sound, loopCount);
+			return _audioHandler.playSound(sound, volume, panning, loopCount);
 		return nullptr;
 	}
 
@@ -535,6 +604,16 @@ namespace lost
 		return _audioHandler.stopSounds(sound);
 	}
 
+	void setSoundVolume(PlaybackSound* sound, float volume)
+	{
+		sound->_setVolume(volume);
+	}
+
+	void setSoundPanning(PlaybackSound* sound, float panning)
+	{
+		sound->_setPanning(panning);
+	}
+
 	bool isSoundPlaying(PlaybackSound* sound)
 	{
 		if (!_audioHandler.hasSound(sound))
@@ -542,12 +621,12 @@ namespace lost
 		return sound->isPlaying();
 	}
 
-	void playSoundStream(SoundStream soundStream, unsigned int loopCount)
+	void playSoundStream(SoundStream soundStream, float volume, float panning, unsigned int loopCount)
 	{
 		// Check if it's already being played
 		if (!soundStream->getActive() && soundStream->isFunctional())
 		{
-			_audioHandler.playSoundStream(soundStream, loopCount);
+			_audioHandler.playSoundStream(soundStream, volume, panning, loopCount);
 		}
 	}
 
@@ -561,5 +640,14 @@ namespace lost
 		if (!_audioHandler.hasSoundStream(sound))
 			return false;
 		return sound->isPlaying();
+	}
+	void setSoundStreamVolume(SoundStream sound, float volume)
+	{
+		sound->_setVolume(volume);
+	}
+
+	void setSoundStreamPanning(SoundStream sound, float panning)
+	{
+		sound->_setPanning(panning);
 	}
 }
