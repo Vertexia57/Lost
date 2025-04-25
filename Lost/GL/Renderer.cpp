@@ -25,6 +25,45 @@ namespace lost
 
 	Renderer* _renderer = nullptr;
 
+	static glm::mat4x4 get2DScaleMat()
+	{
+		bool flipY = lost::_renderTextureStack.empty();
+
+		Window currentWindow = getCurrentWindow();
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		return glm::mat4x4(
+			 xScale, 0.0f,                     0.0f, 0.0f,
+			 0.0f,   flipY ? -yScale : yScale, 0.0f, 0.0f,
+			 0.0f,   0.0f,                     1.0f, 0.0f,
+			-1.0f,   flipY ? 1.0f : -1.0f,     0.0f, 1.0f
+		);
+	}
+
+	static glm::mat4x4 get2DScaleMat(float angle, lost::Vec2 position)
+	{
+		bool flipY = lost::_renderTextureStack.empty();
+
+		Window currentWindow = getCurrentWindow();
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		glm::mat4x4 transform = glm::mat4x4(
+			cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
+			sinf(angle) * xScale, cosf(angle) * yScale * (flipY ? 1.0f : -1.0f), 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			-1.0f, flipY ? 1.0f : -1.0f, 0.0f, 1.0f
+		);
+
+		transform[3][0] += position.x * xScale;
+		transform[3][1] -= position.y * yScale;
+
+		return transform;
+	}
+
 #pragma region RendererBase
 	Renderer::Renderer()
 	{
@@ -167,11 +206,13 @@ namespace lost
 	
 	void Renderer::startRender()
 	{
-		m_MainRenderPasses[getCurrentWindowID()]->bind();
+		m_CurrentRenderPass = m_MainRenderPasses[getCurrentWindowID()];
+		m_CurrentRenderPass->bind();
 
 		for (int i = 0; i < m_MainRenderPasses[getCurrentWindowID()]->storedBuffers.size(); i++)
 		{
 			const RenderBufferData& renderBuffer = m_MainRenderPasses[getCurrentWindowID()]->storedBuffers[i];
+
 			glClearBufferfv(GL_COLOR, i, renderBuffer.defaultColor.v);
 		}
 
@@ -907,6 +948,11 @@ namespace lost
 		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, shaderOverride);
 	}
 
+	RenderPass _getCurrentRenderPass()
+	{
+		return _renderer->_getCurrentRenderPass();
+	}
+
 	void _setUsingImGui(bool state)
 	{
 		_renderer->_setUsingImGui(state);
@@ -988,38 +1034,47 @@ namespace lost
 
 		origin.y *= -1; // Not entirely sure why this is necessary, probably something with the different coordinate system
 
-		float xScale = 2.0f / getWidth(currentWindow);
-		float yScale = 2.0f / getHeight(currentWindow);
-		Vec2 scale = { xScale, yScale };
-
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
-		const lost::Vec2 reusedCornerA = lost::Vec2{ -(origin.x * cosf(angle) + origin.y * sinf(angle)) + bounds.x, origin.x * -sinf(angle) + origin.y * cosf(angle) + bounds.y };
-		const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y };
-
 		CompiledMeshData mesh = {};
 		mesh.vertexData.reserve(16 * 6);
-		mesh.vertexData = {
-			reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-((origin.x - bounds.w) * cosf(angle) + (origin.y) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y) * cosf(angle) + bounds.y, 0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			-((origin.x) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
-		};
+		if (angle != 0.0f)
+		{
+			const lost::Vec2 reusedCornerA = lost::Vec2{ -(origin.x * cosf(angle) + origin.y * sinf(angle)) + bounds.x, origin.x * -sinf(angle) + origin.y * cosf(angle) + bounds.y };
+			const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y };
+
+			mesh.vertexData = {
+				reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				-((origin.x - bounds.w) * cosf(angle) + (origin.y) * sinf(angle)) + bounds.x, (origin.x - bounds.w) * -sinf(angle) + (origin.y) * cosf(angle) + bounds.y, 0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,      reusedCornerB.y,                                                                                                                    0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				-((origin.x) * cosf(angle) + (origin.y + bounds.h) * sinf(angle)) + bounds.x, (origin.x) * -sinf(angle) + (origin.y + bounds.h) * cosf(angle) + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerA.x,      reusedCornerA.y,                                                                                                                    0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			};
+		}
+		else
+		{
+			const lost::Vec2 reusedCornerA = lost::Vec2{ -(origin.x) + bounds.x, origin.y + bounds.y };
+			const lost::Vec2 reusedCornerB = lost::Vec2{ -((origin.x - bounds.w)) + bounds.x, (origin.y + bounds.h) + bounds.y };
+
+			mesh.vertexData = {
+				reusedCornerA.x,      reusedCornerA.y,                0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				-origin.x + bounds.w + bounds.x, origin.y + bounds.y, 0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,      reusedCornerB.y,                0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,      reusedCornerB.y,                0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				-origin.x + bounds.x, origin.y + bounds.h + bounds.y, 0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerA.x,      reusedCornerA.y,                0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+			};
+		}
+
 		mesh.indexData = { 2, 1, 0, 5, 4, 3 };
 		mesh.materialSlotIndicies = { 0 };
 		mesh.meshRenderMode = LOST_MESH_TRIANGLES;
 
 		// Rotate the transform around the axis that goes into the screen (Z)
 
-		glm::mat4x4 transform = glm::mat4x4(
-			 xScale,  0.0f,   0.0f, 0.0f,
-			 0.0f,   -yScale, 0.0f, 0.0f,
-			 0.0f,    0.0f,   1.0f, 0.0f,
-			-1.0f,    1.0f,   0.0f, 1.0f
-		);
+		glm::mat4x4 transform = get2DScaleMat();
 		
 		std::vector<Material> materialList = { mat };
 
@@ -1080,10 +1135,6 @@ namespace lost
 
 		Window currentWindow = getCurrentWindow();
 
-		float xScale = 2.0f / getWidth(currentWindow);
-		float yScale = 2.0f / getHeight(currentWindow);
-		Vec2 scale = { xScale, yScale };
-
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
@@ -1106,15 +1157,7 @@ namespace lost
 		mesh.materialSlotIndicies = { 0 };
 		mesh.meshRenderMode = LOST_MESH_TRIANGLE_FAN;
 
-		glm::mat4x4 transform = glm::mat4x4(
-			 cosf(angle) * xScale, -sinf(angle) * yScale, 0.0f, 0.0f,
-			 sinf(angle) * xScale,  cosf(angle) * yScale, 0.0f, 0.0f,
-			 0.0f,                  0.0f,                 1.0f, 0.0f,
-			-1.0f,                  1.0f,                 0.0f, 1.0f
-		);
-
-		transform[3][0] += position.x * xScale;
-		transform[3][1] -= position.y * yScale;
+		glm::mat4x4 transform = get2DScaleMat(angle, position);
 
 		std::vector<Material> materialList = { mat };
 
@@ -1190,10 +1233,6 @@ namespace lost
 	{
 		Window currentWindow = getCurrentWindow();
 
-		float xScale = 2.0f / getWidth(currentWindow);
-		float yScale = 2.0f / getHeight(currentWindow);
-		Vec2 scale = { xScale, yScale };
-
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
@@ -1208,12 +1247,7 @@ namespace lost
 
 		// Rotate the transform around the axis that goes into the screen (Z)
 
-		glm::mat4x4 transform = glm::mat4x4(
-			 xScale, 0.0f,   0.0f, 0.0f,
-			 0.0f,  -yScale, 0.0f, 0.0f,
-			 0.0f,   0.0f,   1.0f, 0.0f,
-			-1.0f,   1.0f,   0.0f, 1.0f
-		);
+		glm::mat4x4 transform = get2DScaleMat();
 
 		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
 
@@ -1228,10 +1262,6 @@ namespace lost
 	void renderLineStrip(const std::vector<Vec2>& points)
 	{
 		Window currentWindow = getCurrentWindow();
-
-		float xScale = 2.0f / getWidth(currentWindow);
-		float yScale = 2.0f / getHeight(currentWindow);
-		Vec2 scale = { xScale, yScale };
 
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
@@ -1252,12 +1282,7 @@ namespace lost
 
 		// Rotate the transform around the axis that goes into the screen (Z)
 
-		glm::mat4x4 transform = glm::mat4x4(
-			xScale, 0.0f, 0.0f, 0.0f,
-			0.0f, -yScale, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			-1.0f, 1.0f, 0.0f, 1.0f
-		);
+		glm::mat4x4 transform = get2DScaleMat();
 
 		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
 
@@ -1299,12 +1324,14 @@ namespace lost
 		{
 			Window currentWindow = getCurrentWindow();
 
+			float flipY = (lost::_renderTextureStack.empty()) ? 1.0f : -1.0f;
+
 			// [!] TODO: Make this a function
 			mpvTransform = glm::mat4x4(
-				 2.0f / getWidth(currentWindow), 0.0f,							  0.0f,		0.0f,
-				 0.0f,							-2.0f / getHeight(currentWindow), 0.0f,		0.0f,
-				 0.0f,							 0.0f,							  0.0001f,	0.0f,
-				-1.0f,							 1.0f,							  0.2f,		1.0f
+				 2.0f / getWidth(currentWindow), 0.0f,							          0.0f,		0.0f,
+				 0.0f,							-2.0f / getHeight(currentWindow) * flipY, 0.0f,		0.0f,
+				 0.0f,							 0.0f,							          0.0001f,	0.0f,
+				-1.0f,							 flipY,							          0.2f,		1.0f
 			) * _renderer->_TempMeshModelTransform;
 		}
 
@@ -1325,14 +1352,15 @@ namespace lost
 		else
 		{
 			Window currentWindow = getCurrentWindow();
+			
+			float flipY = (!lost::_renderTextureStack.empty()) ? 1.0f : -1.0f;
 
-			// Screenspace transform
 			// [!] TODO: Make this a function
 			mpvTransform = glm::mat4x4(
-				 2.0f / getWidth(currentWindow), 0.0f,							  0.0f,		0.0f,
-				 0.0f,							-2.0f / getHeight(currentWindow), 0.0f,		0.0f,
-				 0.0f,							 0.0f,							  0.0001f,	0.0f,
-				-1.0f,							 1.0f,							  0.2f,		1.0f
+				 2.0f / getWidth(currentWindow), 0.0f,							          0.0f,		0.0f,
+				 0.0f,							-2.0f / getHeight(currentWindow) * flipY, 0.0f,		0.0f,
+				 0.0f,							 0.0f,							          0.0001f,	0.0f,
+				-1.0f,							 flipY,							          0.2f,		1.0f
 			) * _renderer->_TempMeshModelTransform;
 		}
 

@@ -83,6 +83,8 @@ namespace lost
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _renderChar(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr, Shader shaderOverride = nullptr);
 
+	RenderPass _getCurrentRenderPass();
+
 #ifndef IMGUI_DISABLE
 	// Used within the renderer to know if it should run the ImGui functions
 	// Only defined when ImGui is enabled
@@ -264,6 +266,8 @@ namespace lost
 		// Returns the OpenGL depth texture id, by default getting the render texture of the window that's active
 		unsigned int getDepthTexture(unsigned int windowID = -1);
 
+		inline RenderPass _getCurrentRenderPass() const { return m_CurrentRenderPass; };
+
 		// Generates a new VAO for the renderer, this binds to the latest context created
 		void generateNewVAO();
 		// Regenerates a VAO for the renderer, this binds to the context with the same id as the VAO
@@ -314,6 +318,7 @@ namespace lost
 		std::vector<CompiledMeshData*> m_RawMeshes;
 
 		std::vector<RenderPass> m_MainRenderPasses;
+		RenderPass m_CurrentRenderPass = nullptr;
 
 		unsigned int m_EmptyVAO = 0; // The invisible windows VAO
 		std::vector<unsigned int> VAOs; // One per window

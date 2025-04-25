@@ -98,7 +98,7 @@ namespace lost
 	//	}
 	//}
 
-	const LostState& getLostState()
+	LostState& getLostState()
 	{
 		return _state;
 	}

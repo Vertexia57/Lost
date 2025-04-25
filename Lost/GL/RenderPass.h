@@ -6,7 +6,9 @@
 #include "../Log.h"
 #include "vector.h"
 #include "WindowContext.h"
-#include "Vector.h">
+#include "Vector.h"
+
+#include "Texture/Texture.h"
 
 namespace lost
 {
@@ -30,4 +32,31 @@ namespace lost
 
 	// A reference to a renderpass
 	typedef _RenderPass* RenderPass;
+
+	class RenderTexture
+	{
+	public:
+		RenderTexture(int width, int height);
+		~RenderTexture();
+
+		void clear();
+
+		void bind();
+		void unbind();
+
+		void resize(int width, int height);
+
+		Texture getTexture(int slot) const;
+		//Material getMaterial() const;
+
+	private:
+		void _bindPass();
+
+		//Material m_Material;
+		std::vector<Texture> m_Textures;
+
+		_RenderPass m_RenderPass;
+	};
+
+	extern std::stack<RenderTexture*> _renderTextureStack;
 }

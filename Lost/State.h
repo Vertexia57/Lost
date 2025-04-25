@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <string>
 #include <vector>
+#include <stack>
 #include "GL/Vector.h"
 #include "GL/Structs.h"
 
@@ -106,7 +107,7 @@ namespace lost
 	// This function is gross and makes code bad
 
 	// Returns the current state of the lost engine
-	const LostState& getLostState();
+	LostState& getLostState();
 
 	// Adds a output buffer to the renderer, these buffers are added on lost::init(), by default fills with black, regardless of format
 	void addOutputBuffer(const char* bufferName, Vec4 fillColor = { 0.0f, 0.0f, 0.0f, 1.0f }, unsigned int format = LOST_FORMAT_RGBA);

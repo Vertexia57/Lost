@@ -385,7 +385,7 @@ namespace ImGui
 		if (isDisabled)
 			*isOpen = false;
 
-		int borderRound = 4;
+		int borderRound = 5;
 		int roundingCorners = ImDrawFlags_RoundCornersAll;
 		// Add header to draw list
 		drawList->AddRectFilled(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight), frameColor, borderRound, roundingCorners);
@@ -464,7 +464,7 @@ namespace ImGui
 		if (isDisabled)
 			*isOpen = false;
 
-		int borderRound = 4;
+		int borderRound = 5;
 		int roundingCorners = ImDrawFlags_RoundCornersAll;
 		// Add header to draw list
 		drawList->AddRectFilled(ImVec2(screenPosX, screenPosY), ImVec2(screenPosX + windowWidth, screenPosY + getFrameHeight), frameColor, borderRound, roundingCorners);

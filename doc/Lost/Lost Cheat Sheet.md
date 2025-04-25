@@ -1,3 +1,7 @@
+# Notes
+Colors should by default not be transparent
+`setClearColor()` should normalize the values automatically
+
 # Cheat Sheet
 This contains a list of every external function given to the user by the Lost engine.
 
@@ -6,6 +10,19 @@ Every function listed is in the `lost` namespace, and must be prefixed with `los
 ```cpp
 // [!] TODO: Improve Vector structs with extra functions to be on par with glm
 // [!] TODO: Random functions, like randint and stuff
+// [!] TODO: lost::hasShader and other alike functions
+// [!] TODO: camera transforms that effect 2D rendering
+// [!] TODO: lost::Material::getTexture() should take an int for an ID
+// [!] TODO: int operrands on lost::IVecX's
+// [!] TODO: make texBounds on renderRect convert to UV space automatically
+// [!] TODO: make samplers use nearest neighbor by default < This needs to be changeable
+// [!] TODO: fix annoying issue with nearest sampling bleeding into into the positive V axis (Bottom pixels), Subtracing epsilon from it seems to work
+// [!] TODO: default int constructors for lost::VecX
+// [!] TODO: getting the height of a texture in a material is clunky (Accessing any info is kinda iffy)
+
+// [x] BUG: debug information of font height uses an int when it should be float
+// [x] BUG: rendering text with a nullptr crashes program in debug mode
+// [x] BUG: Pressing F12 crashes the program????
 ```
 
 ---

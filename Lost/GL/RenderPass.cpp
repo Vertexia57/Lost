@@ -112,5 +112,86 @@ namespace lost
 
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	}
+	
+	std::stack<RenderTexture*> _renderTextureStack;
+
+	RenderTexture::RenderTexture(int width, int height)
+		: m_RenderPass(width, height, lost::getLostState().currentBuffers, lost::getCurrentWindow() ? lost::getCurrentWindow() : lost::getWindow() )
+	{
+		std::vector<unsigned int>& currentTextures = m_RenderPass.textures;
+		unsigned int index = 0;
+		for (unsigned int buffer : currentTextures)
+		{
+			lost::Vec4 color = m_RenderPass.storedBuffers[index].defaultColor;
+			m_RenderPass.storedBuffers[index].defaultColor = { color.r, color.g, color.b, 0.0f };
+			index++;
+
+			_Texture* texture = new _Texture();
+			texture->makeTexture(buffer, false);
+			m_Textures.push_back(texture);
+		}
+	}
+
+	RenderTexture::~RenderTexture()
+	{
+		//delete m_Material;
+		for (Texture texture : m_Textures)
+			delete texture;
+	}
+
+	void RenderTexture::clear()
+	{
+		for (int i = 0; i < m_RenderPass.storedBuffers.size(); i++)
+		{
+			const RenderBufferData& renderBuffer = m_RenderPass.storedBuffers[i];
+			glClearBufferfv(GL_COLOR, i, renderBuffer.defaultColor.v);
+		}
+
+	}
+
+	void RenderTexture::bind()
+	{
+		_renderTextureStack.push(this);
+		lost::renderInstanceQueue();
+		_bindPass();
+	}
+
+	void RenderTexture::unbind()
+	{
+		std::stack<RenderTexture*>& stack = _renderTextureStack;
+		if (stack.top() == this)
+			stack.pop();
+		else
+		{
+			debugLog("Tried to unbind a render texture that wasn't currently bound", LOST_LOG_ERROR);
+			return;
+		}
+
+		lost::renderInstanceQueue();
+
+		if (stack.empty())
+		{
+			lost::_getCurrentRenderPass()->bind();
+		}
+		else
+		{
+			stack.top()->_bindPass();
+		}
+	}
+
+	void RenderTexture::resize(int width, int height)
+	{
+		m_RenderPass.resize(width, height, lost::getCurrentWindow());
+	}
+
+	Texture RenderTexture::getTexture(int slot) const
+	{
+		return m_Textures.at(slot);
+	}
+
+	void RenderTexture::_bindPass()
+	{
+		m_RenderPass.bind();
+	}
 
 }
