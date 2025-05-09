@@ -203,11 +203,15 @@ namespace lost
 			unsigned int depthTestFuncOverride;
 			bool depthWrite;
 			Shader shaderOverride;
+			bool invertCullMode;
 
-			bool compare(const std::vector<Material>& _materials, const glm::mat4x4& _mvpTransform, const glm::mat4x4& _modelTransform, unsigned int _depthTestFuncOverride, bool _depthWrite, Shader _shaderOverride)
+			bool compare(const std::vector<Material>& _materials, const glm::mat4x4& _mvpTransform, const glm::mat4x4& _modelTransform, unsigned int _depthTestFuncOverride, bool _depthWrite, Shader _shaderOverride, bool _invertCullMode)
 			{
 				// Check if the material array is the same
 				if (materials.size() != _materials.size())
+					return false;
+
+				if (invertCullMode != _invertCullMode)
 					return false;
 
 				for (int i = 0; i < materials.size(); i++)
@@ -245,9 +249,9 @@ namespace lost
 		void resizeFrameBuffers(int windowID, int width, int height);
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr, bool invertCullMode = false);
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
+		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr, bool invertCullMode = false);
 
 		virtual void initRenderInstanceQueue();
 		// Renders the queue of meshes in the render queue
@@ -334,9 +338,9 @@ namespace lost
 		virtual ~Renderer2D();
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr, bool invertCullMode = false);
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
+		virtual void addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr, bool invertCullMode = false);
 
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();
@@ -435,7 +439,7 @@ namespace lost
 		virtual ~Renderer3D();
 
 		// Adds a mesh to the image queue and renders it if the conditions are met
-		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr);
+		virtual void addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride = LOST_DEPTH_TEST_AUTO, bool depthWrite = true, Shader shaderOverride = nullptr, bool invertCullMode = false);
 		
 		// Renders the queue of meshes in the render queue
 		virtual void renderInstanceQueue();

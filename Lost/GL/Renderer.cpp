@@ -122,11 +122,11 @@ namespace lost
 	}
 
 	// Empty for overloading
-	void Renderer::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride)
+	void Renderer::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride, bool invertCullMode)
 	{
 	}
 
-	void Renderer::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride)
+	void Renderer::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride, bool invertCullMode)
 	{
 		// Compare this raw mesh to the last one to see if it can be instanced
 		if (m_RawMeshInstance != nullptr && meshData.materialSlotIndicies.size() == 1) // Check if there was a last mesh, only batch if there is one material
@@ -137,7 +137,7 @@ namespace lost
 			 || meshData.meshRenderMode == LOST_MESH_TRIANGLES)) // <-
 			{
 				// Nested to save on operating time as this comparator does quite a bit
-				if (m_RawMeshBuffer.compare(materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite, shaderOverride))
+				if (m_RawMeshBuffer.compare(materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite, shaderOverride, invertCullMode))
 				{
 					// Mesh can be instanced
 					
@@ -163,7 +163,7 @@ namespace lost
 			// Add raw queue to render queue
 			// We only do this if this wasn't a match to the last raw mesh rendered
 
-			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite, m_RawMeshBuffer.shaderOverride);
+			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite, m_RawMeshBuffer.shaderOverride, m_RawMeshBuffer.invertCullMode);
 		}
 
 		// This code is only ran when a new mesh needs to be created.
@@ -174,19 +174,19 @@ namespace lost
 			meshData.vertexData,
 			meshData.materialSlotIndicies,
 			meshData.indexData,
-			meshData.meshRenderMode
+			meshData.meshRenderMode,
 		};
 
 		m_RawMeshes.push_back(newMesh);
 
 		m_RawMeshInstance = newMesh;
-		m_RawMeshBuffer = RawMeshBuffer{ materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite, shaderOverride };
+		m_RawMeshBuffer = RawMeshBuffer{ materials, mvpTransform, modelTransform, depthTestFuncOverride, depthWrite, shaderOverride, invertCullMode };
 	}
 
 	void Renderer::initRenderInstanceQueue()
 	{
 		if (m_RawMeshInstance) // Add the last rendered raw mesh
-			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite, m_RawMeshBuffer.shaderOverride);
+			addMeshToQueue(m_RawMeshInstance, m_RawMeshBuffer.materials, m_RawMeshBuffer.mvpTransform, m_RawMeshBuffer.modelTransform, m_RawMeshBuffer.depthTestFuncOverride, m_RawMeshBuffer.depthWrite, m_RawMeshBuffer.shaderOverride, m_RawMeshBuffer.invertCullMode);
 	}
 
 	// Ran at the end of every renderer's renderInstanceQueue function
@@ -436,7 +436,7 @@ namespace lost
 	{
 	}
 
-	void Renderer2D::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride)
+	void Renderer2D::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride, bool invertCullMode)
 	{
 		if (m_RenderMode == LOST_RENDER_MODE_INSTANT)
 		{
@@ -458,7 +458,7 @@ namespace lost
 		}
 	}
 
-	void Renderer2D::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride)
+	void Renderer2D::addRawToQueue(CompiledMeshData& meshData, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride, bool invertCullMode)
 	{
 	}
 
@@ -549,7 +549,7 @@ namespace lost
 	{
 	}
 
-	void Renderer3D::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride)
+	void Renderer3D::addMeshToQueue(Mesh mesh, std::vector<Material>& materials, const glm::mat4x4& mvpTransform, const glm::mat4x4& modelTransform, unsigned int depthTestFuncOverride, bool depthWrite, Shader shaderOverride, bool invertCullMode)
 	{
 		if (m_RenderMode == LOST_RENDER_MODE_INSTANT)
 		{
@@ -577,7 +577,14 @@ namespace lost
 			renderData.modelTransform = modelTransform;
 			renderData.depthMode = (depthTestFuncOverride == LOST_DEPTH_TEST_AUTO ? materials[i]->getDepthTestFunc() : depthTestFuncOverride);
 			renderData.depthWrite = depthWrite && materials[i]->getDepthWrite();
-			renderData.cullMode = (m_CullMode == LOST_CULL_AUTO ? materials[i]->getFaceCullMode() : m_CullMode);
+
+			unsigned int cullMode = materials[i]->getFaceCullMode();
+			unsigned int materialCullMode =
+				(invertCullMode && (cullMode == LOST_CULL_FRONT || cullMode == LOST_CULL_BACK)) ?
+				(cullMode == LOST_CULL_BACK ? LOST_CULL_FRONT : LOST_CULL_BACK) :
+				(cullMode);
+
+			renderData.cullMode = (m_CullMode == LOST_CULL_AUTO ? materialCullMode : m_CullMode);
 			renderData.renderMode = ((CompiledMeshData*)mesh)->meshRenderMode;
 			renderData.shaderOverride = shaderOverride;
 			renderData.ZSortMode = LOST_ZSORT_NORMAL;
@@ -760,7 +767,7 @@ namespace lost
 			glBindBuffer(GL_ARRAY_BUFFER, EBO);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_MainRenderData[m_MainRenderData.size() - 1].indicies * sizeof(int), ((CompiledMeshData*)m_MainRenderData[m_MainRenderData.size() - 1].mesh)->indexData.data() + m_MainRenderData[m_MainRenderData.size() - 1].startIndex, GL_STATIC_DRAW);
 			
-			glDrawElementsInstanced(((CompiledMeshData*)m_MainRenderData[m_MainRenderData.size() - 1].mesh)->meshRenderMode, m_MainRenderData[m_MainRenderData.size() - 1].indicies, GL_UNSIGNED_INT, 0, transforms.size());
+			glDrawElementsInstanced(((CompiledMeshData*)m_MainRenderData[m_MainRenderData.size() - 1].mesh)->meshRenderMode, m_MainRenderData[m_MainRenderData.size() - 1].indicies, GL_UNSIGNED_INT, 0, transforms.size() / 2);
 
 			glDepthMask(true);
 			glDepthFunc(LOST_DEPTH_TEST_LESS);
@@ -936,16 +943,11 @@ namespace lost
 
 		// Rotate the transform around the axis that goes into the screen (Z)
 
-		glm::mat4x4 transform = glm::mat4x4(
-			xScale, 0.0f, 0.0f, 0.0f,
-			0.0f, -yScale, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			-1.0f, 1.0f, 0.0f, 1.0f
-		);
+		glm::mat4x4 transform = get2DScaleMat();
 
 		std::vector<Material> materialList = { mat };
 
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, shaderOverride);
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, shaderOverride, !lost::_renderTextureStack.empty());
 	}
 
 	RenderPass _getCurrentRenderPass()
@@ -1037,6 +1039,8 @@ namespace lost
 		// Get current render color from state
 		const Color& color = getNormalizedColor();
 
+		texbounds.h -= 0.000001f;
+
 		CompiledMeshData mesh = {};
 		mesh.vertexData.reserve(16 * 6);
 		if (angle != 0.0f)
@@ -1078,7 +1082,7 @@ namespace lost
 		
 		std::vector<Material> materialList = { mat };
 
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, nullptr, !lost::_renderTextureStack.empty());
 	}
 
 	void renderRect3D(Vec3 position, Vec2 size, Vec3 rotation, Bounds2D texBounds, Material mat)
@@ -1161,7 +1165,7 @@ namespace lost
 
 		std::vector<Material> materialList = { mat };
 
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, nullptr, !lost::_renderTextureStack.empty());
 	}
 
 	void renderEllipse3D(Vec3 position, Vec2 extents, Vec3 rotation, Material mat, int detail)
@@ -1251,7 +1255,7 @@ namespace lost
 
 		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
 
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, nullptr, !lost::_renderTextureStack.empty());
 	}
 
 	void renderLine(Vec2 a, Vec2 b)
@@ -1286,7 +1290,7 @@ namespace lost
 
 		std::vector<Material> materialList = { getDefaultWhiteMaterial() };
 
-		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false);
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, nullptr, !lost::_renderTextureStack.empty());
 	}
 
 	void renderInstanceQueue()
@@ -1314,6 +1318,17 @@ namespace lost
 		_renderer->_BuildingMesh = true;
 	}
 
+	void endMesh(Material material)
+	{
+		std::vector<Material> matList = { material };
+		endMesh(matList);
+	}
+
+	void endMesh()
+	{
+		endMesh(lost::getDefaultWhiteMaterial());
+	}
+
 	void endMesh(std::vector<Material>& materials)
 	{
 		glm::mat4x4 mpvTransform;
@@ -1336,42 +1351,8 @@ namespace lost
 		}
 
 		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, _renderer->_TempMeshUsesWorldTransform);
+		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, _renderer->_TempMeshUsesWorldTransform, nullptr, _renderer->_TempMeshUsesWorldTransform && !lost::_renderTextureStack.empty());
 		_renderer->_BuildingMesh = false;
-	}
-
-	void endMesh(Material material)
-	{
-		// Create a material list which contains the material given
-		std::vector<Material> materials = { material };
-
-		glm::mat4x4 mpvTransform;
-		// Get the MPV of the model
-		if (_renderer->_TempMeshUsesWorldTransform)
-			mpvTransform = _getCurrentCamera()->getPV() * _renderer->_TempMeshModelTransform;
-		else
-		{
-			Window currentWindow = getCurrentWindow();
-			
-			float flipY = (!lost::_renderTextureStack.empty()) ? 1.0f : -1.0f;
-
-			// [!] TODO: Make this a function
-			mpvTransform = glm::mat4x4(
-				 2.0f / getWidth(currentWindow), 0.0f,							          0.0f,		0.0f,
-				 0.0f,							-2.0f / getHeight(currentWindow) * flipY, 0.0f,		0.0f,
-				 0.0f,							 0.0f,							          0.0001f,	0.0f,
-				-1.0f,							 flipY,							          0.2f,		1.0f
-			) * _renderer->_TempMeshModelTransform;
-		}
-
-		// Add the mesh data to the render queue
-		_renderer->addRawToQueue(_renderer->_TempMeshBuild, materials, mpvTransform, _renderer->_TempMeshModelTransform, _renderer->_TempMeshUsesWorldTransform ? LOST_DEPTH_TEST_AUTO : LOST_DEPTH_TEST_ALWAYS, _renderer->_TempMeshUsesWorldTransform);
-		_renderer->_BuildingMesh = false;
-	}
-
-	void endMesh()
-	{
-		endMesh(lost::getDefaultWhiteMaterial());
 	}
 
 	void addVertex(Vec3 position, Color vertexColor, Vec2 textureCoord)

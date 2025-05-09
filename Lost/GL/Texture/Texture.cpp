@@ -20,10 +20,8 @@ namespace lost
 	_Texture::~_Texture()
 	{
 		if (m_HandleDeletion)
-		{
 			glDeleteTextures(1, &m_Texture);
-			delete m_TextureMaterial;
-		}
+		delete m_TextureMaterial;
 	}
 
 	void _Texture::loadTexture(const char* dir)
@@ -73,7 +71,7 @@ namespace lost
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		if (!overridingTexture)
 			m_TextureMaterial = new _Material(lost::_defaultShader, { this });
@@ -111,7 +109,7 @@ namespace lost
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		m_TextureMaterial = new _Material(lost::_defaultShader, { this });
 
@@ -124,7 +122,8 @@ namespace lost
 
 		if (m_Texture != -1)
 		{
-			glDeleteTextures(1, &m_Texture);
+			if (handleDelete)
+				glDeleteTextures(1, &m_Texture);
 			delete m_TextureMaterial;
 		}
 

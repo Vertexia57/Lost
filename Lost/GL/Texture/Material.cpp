@@ -59,6 +59,11 @@ namespace lost
 		return m_Textures.at(m_Shader->getTextureNameMap().at(slotName));
 	}
 
+	Texture _Material::getTextureWithID(unsigned int slot) const
+	{
+		return m_Textures.at(slot);
+	}
+
 	void _Material::bindTextures() const
 	{
 		for (int i = 0; i < m_Textures.size(); i++)

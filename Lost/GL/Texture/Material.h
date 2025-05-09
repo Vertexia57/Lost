@@ -101,6 +101,7 @@ namespace lost
 
 		void	setTexture(const char* slotName, Texture texture);
 		Texture getTexture(const char* slotName) const;
+		Texture getTextureWithID(unsigned int slot) const;
 
 		void bindTextures() const;
 		void bindShader() const;

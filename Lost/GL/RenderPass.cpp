@@ -78,10 +78,13 @@ namespace lost
 
 	void _RenderPass::resize(int width, int height, Window context)
 	{
-		if (width + height > 0)
+		if (width > 0 && height > 0)
 		{
 			pushWindow();
 			glfwMakeContextCurrent(context->glfwWindow);
+
+			int activeFrameBuffer = 0;
+			glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &activeFrameBuffer);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -95,6 +98,8 @@ namespace lost
 			glBindTexture(GL_TEXTURE_2D, depthStencilTexture);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthStencilTexture, 0);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, activeFrameBuffer); // Return back to old frame buffer
 
 			popWindow();
 		}
@@ -112,11 +117,11 @@ namespace lost
 
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	}
-	
+
 	std::stack<RenderTexture*> _renderTextureStack;
 
 	RenderTexture::RenderTexture(int width, int height)
-		: m_RenderPass(width, height, lost::getLostState().currentBuffers, lost::getCurrentWindow() ? lost::getCurrentWindow() : lost::getWindow() )
+		: m_RenderPass(width, height, lost::getLostState().currentBuffers, lost::getCurrentWindow() ? lost::getCurrentWindow() : lost::getWindow())
 	{
 		std::vector<unsigned int>& currentTextures = m_RenderPass.textures;
 		unsigned int index = 0;
@@ -182,6 +187,10 @@ namespace lost
 	void RenderTexture::resize(int width, int height)
 	{
 		m_RenderPass.resize(width, height, lost::getCurrentWindow());
+		for (int i = 0; i < m_Textures.size(); i++)
+		{
+			m_Textures.at(i)->makeTexture(m_RenderPass.textures.at(i), false);
+		}
 	}
 
 	Texture RenderTexture::getTexture(int slot) const

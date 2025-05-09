@@ -48,7 +48,15 @@ int main()
 
 		rt2.clear();
 		lost::setFillColor(255, 0, 0);
-		lost::renderRect(lost::getMouseX() - 200, lost::getMouseY() - 200, 300, 300);
+		lost::renderRect(lost::getMouseX() - 100, lost::getMouseY() - 100, 100, 100);
+		lost::renderRect(lost::getMouseX() - 200, lost::getMouseY() - 100, 100, 100);
+		lost::renderRect(lost::getMouseX() - 000, lost::getMouseY() - 100, 100, 100);
+		lost::renderRect(lost::getMouseX() - 100, lost::getMouseY() - 000, 100, 100);
+		lost::renderRect(lost::getMouseX() - 200, lost::getMouseY() - 000, 100, 100);
+		lost::renderRect(lost::getMouseX() - 000, lost::getMouseY() - 000, 100, 100);
+		lost::renderRect(lost::getMouseX() - 100, lost::getMouseY() - 200, 100, 100);
+		lost::renderRect(lost::getMouseX() - 200, lost::getMouseY() - 200, 100, 100);
+		lost::renderRect(lost::getMouseX() - 000, lost::getMouseY() - 200, 100, 100);
 
 		rt2.unbind();
 		lost::setFillColor(255, 255, 255);
@@ -56,7 +64,7 @@ int main()
 
 		rt.unbind();
 		lost::setFillColor(255, 255, 255);
-		lost::renderTexture(rt.getTexture(0), { 100, 100, 1000, 500 });
+		lost::renderTexture(rt.getTexture(0), { 100, 100, 500, 500 });
 
 		lost::imGuiDisplayProgramInfo();
 		lost::endFrame();
