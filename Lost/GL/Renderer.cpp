@@ -950,6 +950,59 @@ namespace lost
 		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, shaderOverride, !lost::_renderTextureStack.empty());
 	}
 
+	void _renderCharList(std::vector<Bounds2D>& boundList, std::vector<Bounds2D>& texBoundList, Material mat, Shader shaderOverride)
+	{
+		// If no material is given use the default one
+		if (mat == nullptr) mat = getDefaultWhiteMaterial();
+
+		Window currentWindow = getCurrentWindow();
+
+		float xScale = 2.0f / getWidth(currentWindow);
+		float yScale = 2.0f / getHeight(currentWindow);
+		Vec2 scale = { xScale, yScale };
+
+		// Get current render color from state
+		const Color& color = getNormalizedColor();
+
+		unsigned int charCount = boundList.size();
+
+		CompiledMeshData mesh = {};
+		mesh.vertexData.reserve(16 * 6 * charCount);
+
+		for (int i = 0; i < charCount; i++)
+		{
+
+			Bounds2D& bounds = boundList.at(i);
+			Bounds2D& texbounds = texBoundList.at(i);
+
+			const lost::Vec2 reusedCornerA = lost::Vec2{ bounds.x, bounds.y };
+			const lost::Vec2 reusedCornerB = lost::Vec2{ bounds.x + bounds.w, bounds.y + bounds.h };
+			mesh.vertexData.insert(mesh.vertexData.begin(), {
+				reusedCornerA.x,     reusedCornerA.y, 0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				bounds.w + bounds.x, bounds.y,        0.0f, texbounds.x + texbounds.w, texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,     reusedCornerB.y, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerB.x,     reusedCornerB.y, 0.0f, texbounds.x + texbounds.w, texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				bounds.x, bounds.h + bounds.y,        0.0f, texbounds.x,               texbounds.y + texbounds.h, color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+				reusedCornerA.x,     reusedCornerA.y, 0.0f, texbounds.x,               texbounds.y,               color.r, color.g, color.b, color.a, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f
+				});
+
+			const unsigned int indexOffset = i * 6;
+			mesh.indexData.insert(mesh.indexData.begin(), { indexOffset + 2, indexOffset + 1, indexOffset + 0, indexOffset + 5, indexOffset + 4, indexOffset + 3 });
+
+		}
+
+		mesh.materialSlotIndicies = { 0 };
+		mesh.meshRenderMode = LOST_MESH_TRIANGLES;
+
+		// Rotate the transform around the axis that goes into the screen (Z)
+
+		glm::mat4x4 transform = get2DScaleMat();
+
+		std::vector<Material> materialList = { mat };
+
+		_renderer->addRawToQueue(mesh, materialList, transform, transform, LOST_DEPTH_TEST_ALWAYS, false, shaderOverride, !lost::_renderTextureStack.empty());
+	}
+
 	RenderPass _getCurrentRenderPass()
 	{
 		return _renderer->_getCurrentRenderPass();
@@ -1320,8 +1373,7 @@ namespace lost
 
 	void endMesh(Material material)
 	{
-		std::vector<Material> matList = { material };
-		endMesh(matList);
+		endMesh({ material });
 	}
 
 	void endMesh()

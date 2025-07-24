@@ -5,10 +5,48 @@
 #include "External/RtAudio.h"
 #include "ThreadSafeTemplate.h"
 
+// [!] TODO: Playback speed option ??? Would require subsampling and sample rate changes
+// [!] TODO: Change audio device option
+// [!] TODO: Audio device list option, need to filter by audio OUTPUTS
+
+#define LOST_AUDIO_BUFFER_FRAMES 1024 // The amount of samples out to EACH channel
+#define LOST_AUDIO_CHANNELS 2 // Will ALWAYS be 2!!!
+#define LOST_AUDIO_BUFFER_COUNT 2048 // LOST_AUDIO_CHANNELS * LOST_AUDIO_BUFFER_FRAMES, the amount of samples in total
+#define LOST_AUDIO_SAMPLE_RATE 44100
 
 namespace lost
 {
+
+#if defined(LOST_AUDIO_QUALITY_HIGH)
+	typedef int32_t _ChannelQuality;
+	constexpr int _EngineBytesPerSample = 4;
+	constexpr RtAudioFormat _RTAudioFormat = RTAUDIO_SINT32;
+#elif defined(LOST_AUDIO_QUALITY_LOW)
+	typedef int8_t _ChannelQuality;
+	constexpr int _EngineBytesPerSample = 1;
+	constexpr RtAudioFormat _RTAudioFormat = RTAUDIO_SINT8;
+#else // LOST_AUDIO_QUALITY_MEDIUM
+	typedef int16_t _ChannelQuality;
+	constexpr RtAudioFormat _RTAudioFormat = RTAUDIO_SINT16;
+	constexpr int _EngineBytesPerSample = 2;
+#endif
+
+	// A typedef to the quality of the audio engine
+	// Is mainly used in effects, evaluates to an integer
+	typedef _ChannelQuality AudioSample;
+
+	float audioSampleToFloat(AudioSample sample);
+	AudioSample floatToAudioSample(float sample);
+
+	float PCM32ToFloat(int32_t val);
+	float PCM16ToFloat(int16_t val);
+	float PCM8ToFloat(int8_t val);
+	int32_t floatToPCM32(float val);
+	int16_t floatToPCM16(float val);
+	int8_t floatToPCM8(float val);
+
 	class _Sound;
+	class Effect;
 	
 	struct _PlaybackData
 	{
@@ -35,6 +73,9 @@ namespace lost
 		inline void _setIsPlaying() { a_Playing.write(false); };
 		inline _PlaybackData& _getPlaybackData() { return a_PlaybackData; };
 
+		inline bool _getPaused() { return a_Paused.read(); };
+		inline void _setPaused(bool paused) { a_Paused.write(paused); };
+
 		inline float _getVolume() { return a_Volume.read(); };
 		inline void _setVolume(float volume) { a_Volume.write(volume); }
 
@@ -50,6 +91,7 @@ namespace lost
 
 		_HaltWrite<float> a_Volume;
 		_HaltWrite<float> a_Panning;
+		_HaltWrite<bool>  a_Paused;
 
 		// Playback data
 		int m_FormatFactor;
@@ -60,6 +102,7 @@ namespace lost
 	void _initAudio();
 	void _exitAudio();
 	void _updateAudio();
+
 	unsigned int _getAudioHandlerFormat();
 	unsigned int _getAudioHandlerBufferSize(); // Returns the size of the nBufferSize of the audio buffer
 
@@ -81,13 +124,13 @@ namespace lost
 	/// <param name="panning">The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center</param>
 	/// <param name="loopCount">The amount of times to loop, setting this as -1 or UINT_MAX loops it forever. It can be stopped with stopSound</param>
 	/// <returns></returns>
-	PlaybackSound* playSound(Sound sound, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0); // [!] TODO: Volume and Panning 
+	PlaybackSound* playSound(Sound sound, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0); 
 	
 	// Stops the sound being played
 	void stopSound(const PlaybackSound* sound);
 	// Stops the all sounds playing that are using this sound, use the PlaybackSound return to manage individual ones
 	void stopSound(Sound sound);
-	void setSoundPaused(const PlaybackSound* sound, bool paused);
+	void setSoundPaused(PlaybackSound* sound, bool paused);
 
 	void setSoundVolume(PlaybackSound* sound, float volume);
 	// The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center
@@ -108,42 +151,24 @@ namespace lost
 	/// <param name="loopCount">The amount of times to loop, setting this as -1 or UINT_MAX loops it forever</param>
 	/// <returns></returns>
 	void playSoundStream(SoundStream soundStream, float volume = 1.0f, float panning = 0.0f, unsigned int loopCount = 0);
-	void stopSoundStream(SoundStream soundStream);
-	bool isSoundStreamPlaying(SoundStream sound);
+	void stopSoundStream(SoundStream soundStream); 
+	
+	void setSoundStreamPaused(SoundStream soundStream, bool paused);
 
 	void setSoundStreamVolume(SoundStream sound, float volume);
 	// The panning of the sound -1.0f is left ear, 1.0f is right ear, 0.0f is center
 	void setSoundStreamPanning(SoundStream sound, float panning);
+
+	bool isSoundStreamPlaying(SoundStream sound); 
+
+	// [==========================]
+	//    Audio Effect Functions
+	// [==========================]
+
+	void addGlobalEffect(Effect* effect);
+	void removeGlobalEffect(Effect* effect);
+	void addEffectToSound(Effect* effect, PlaybackSound* sound);
+	void removeEffectFromSound(Effect* effect, PlaybackSound* sound);
+	void addEffectToSoundStream(Effect* effect, SoundStream soundStream);
+	void removeEffectFromSoundStream(Effect* effect, SoundStream soundStream);
 }
-//
-//// Two-channel sawtooth wave generator.
-//int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
-//	double streamTime, RtAudioStreamStatus status, void* userData)
-//{
-//	static unsigned int iterate = 0;
-//	
-//	const float volume = 0.01f;
-//	const float hzList[] = { 261.6, 329.6, 392.0 };
-//	const int noteCount = 3;
-//	const int octave = 2;
-//
-//	unsigned int i, j;
-//	double* buffer = (double*)outputBuffer;
-//	double* lastValues = (double*)userData;
-//
-//	if (status)
-//		std::cout << "Stream underflow detected!" << std::endl;
-//
-//	// Write interleaved audio data.
-//	for (i = 0; i < nBufferFrames; i++) {
-//		for (j = 0; j < 2; j++) {
-//			*buffer++ = lastValues[j];
-//			iterate++;
-//
-//			for (int noteIndex = 0; noteIndex < noteCount; noteIndex++)
-//				lastValues[j] += sinf((double)iterate * (1.0 / 44100.0) * (double)hzList[noteIndex] * (double)octave) * volume;
-//		}
-//	}
-//
-//	return 0;
-//}

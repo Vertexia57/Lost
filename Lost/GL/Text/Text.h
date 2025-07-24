@@ -30,7 +30,7 @@ namespace lost
 		~_Font();
 
 		int textureSize;
-		int fontHeight;
+		float fontHeight;
 		Glyph glyphs[127];
 		Texture fontTexture;
 		Material fontMaterial;
@@ -52,6 +52,7 @@ namespace lost
 	float textHeight(const char* text, Font font, float scale);
 
 	// [!] TODO: Docs
+	// [!] TODO: Fix text alignment to be "per-line" rather than the whole block
 
 	// Renders text to the screen, using screenspace, allows for alignment
 	// shaderOverride allows for custom effects on fonts, note that the only color on font textures is the red channel, as text is grayscale

@@ -21,10 +21,16 @@ Every function listed is in the `lost` namespace, and must be prefixed with `los
 // [!] TODO: getting the height of a texture in a material is clunky (Accessing any info is kinda iffy)
 // [!] TODO: add "wasResized" function for the current window's screen
 
+// [!] ICKY: Remove ALL non-cross platform implementations of Windows.h
+// [?] Maybe: #define _WINSOCKAPI_ include this in the predefines of the engine maybe? // Doesn't work how you think :/
+// [!] ICKY: Move dependancies into one folder
+
+// [x] BUG: Setting boolean uniforms in shaders accesses out bounds memory, needs to use an int and GL_FALSE and GL_TRUE
+// [x] BUG: delta time doesn't work if dt is less than 1 millisecond
 // [x] BUG: debug information of font height uses an int when it should be float
 // [x] BUG: rendering text with a nullptr crashes program in debug mode
 // [x] BUG: Pressing F12 crashes the program????
-// [x] BUG: When rendering into render textures the cull mode needs to be changed since the directionality gets flipped
+// [x] BUG: When using renderTextures change it from flipping the faces of rendered textures to flipping the "front-face" from clockwise to counter clockwise
 // [x] BUG: Fix text alignment to be "per-line" rather than the whole block
 ```
 
@@ -406,7 +412,7 @@ enum {
 // [ Debug Mode Only! These functions are NOT in the "lost" namespace!! ]
 void debugLog(const char* text, unsigned int level); // Logs the text
 void debugLogIf(bool condition, const char* text, unsigned int level); // Logs the text if the condition is met
-// [ Debug + Release Mode. These one's are ]
+// [ Debug + Release Mode. These ones are ]
 void log(const char* text, unsigned int level); // Logs the text, even in release mode
 void setLogContext(std::string context); // Add context for the log function, helps with error messages, can be cleared with clearLogContext()
 void clearLogContext(); // Clears the log context, does nothing unless setLogContext() has been ran

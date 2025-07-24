@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Shaders.md",
+                "file": "Lost Cheat Sheet.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Shaders"
+              "title": "Lost Cheat Sheet"
             }
           },
           {
@@ -41,16 +41,16 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Data Handling within Lost.md",
+                "file": "Lost Audio.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Data Handling within Lost"
+              "title": "Lost Audio"
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -192,13 +192,13 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "87c4f30a4e59955d",
+  "active": "ca1cb09776fe2a2a",
   "lastOpenFiles": [
-    "Untitled.md",
     "Shaders.md",
-    "Lost Cheat Sheet.md",
-    "Data Handling within Lost.md",
     "Rendering.md",
+    "Data Handling within Lost.md",
+    "Lost Cheat Sheet.md",
+    "Untitled.md",
     "Images/Default shader breakdown.png",
     "Images/ShaderLoadInfo.png",
     "Images/InitDebugInfo.png",

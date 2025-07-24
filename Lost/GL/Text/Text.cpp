@@ -255,7 +255,7 @@ namespace lost
 				switch (vAlign)
 				{
 				case LOST_TEXT_ALIGN_TOP:
-					origin.y += (float)font->fontHeight * scale * 2.0f / 3.0f;
+					origin.y += (float)font->fontHeight * scale * 2.4f / 3.0f;
 					break;
 				case LOST_TEXT_ALIGN_MIDDLE:
 					origin.y += (float)font->fontHeight * scale * 2.0f / 3.0f - textH / 2.0f;
@@ -265,19 +265,26 @@ namespace lost
 					break;
 				}
 
+				size_t textLength = strlen(text);
 				Vec2 pos = origin;
+
+				std::vector<Bounds2D> bounds = {};
+				std::vector<Bounds2D> texCoords = {};
+				bounds.reserve(textLength);
+				texCoords.reserve(textLength);
 
 				for (int i = 0; text[i] != '\0'; i++)
 				{
 					Glyph& glyph = font->glyphs[text[i]];
 
-					// Render textured rect of char
-					lost::_renderChar(
-						{ pos.x - glyph.offset.x * scale, pos.y - glyph.offset.y * scale, (float)glyph.size.x * scale, (float)glyph.size.y * scale },
-						{ (float)glyph.textureCoords.x / font->textureSize, (float)glyph.textureCoords.y / font->textureSize, (float)glyph.size.x / font->textureSize, (float)glyph.size.y / font->textureSize },
-						font->fontMaterial, shaderOverride
-					);
+					//_renderChar({ pos.x - glyph.offset.x * scale, pos.y - glyph.offset.y * scale, (float)glyph.size.x * scale, (float)glyph.size.y * scale },
+					//	{ (float)glyph.textureCoords.x / font->textureSize, (float)glyph.textureCoords.y / font->textureSize, (float)glyph.size.x / font->textureSize, (float)glyph.size.y / font->textureSize },
+					//	font->fontMaterial, shaderOverride);
 
+					// Store the position and texcoord of the glyph
+					bounds.push_back({ pos.x - glyph.offset.x * scale, pos.y - glyph.offset.y * scale, (float)glyph.size.x * scale, (float)glyph.size.y * scale });
+					texCoords.push_back({ (float)glyph.textureCoords.x / font->textureSize, (float)glyph.textureCoords.y / font->textureSize, (float)glyph.size.x / font->textureSize, (float)glyph.size.y / font->textureSize });
+					
 					pos.x += glyph.advance.x * scale;
 					if (text[i] == '\n')
 					{
@@ -285,6 +292,8 @@ namespace lost
 						pos.y += font->fontHeight * scale;
 					}
 				}
+
+				_renderCharList(bounds, texCoords, font->fontMaterial, shaderOverride);
 			}
 		}
 	}

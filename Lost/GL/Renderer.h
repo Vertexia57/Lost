@@ -83,6 +83,10 @@ namespace lost
 	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
 	void _renderChar(Bounds2D bounds, Bounds2D texBounds = { 0.0f, 0.0f, 1.0f, 1.0f }, Material mat = nullptr, Shader shaderOverride = nullptr);
 
+	// Renders several quads to the screen at once, this is the same as renderRectPro but has a shader override
+	// NOTE: This is only used inside of the Lost engine, do not run it (unless you know what you're doing)
+	void _renderCharList(std::vector<Bounds2D>& bounds, std::vector<Bounds2D>& texBounds, Material mat = nullptr, Shader shaderOverride = nullptr);
+
 	RenderPass _getCurrentRenderPass();
 
 #ifndef IMGUI_DISABLE

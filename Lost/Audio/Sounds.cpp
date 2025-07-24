@@ -59,7 +59,7 @@ namespace lost
 		// Sanity Checks
 		if (strcmp(outData.riffText, "RIFF") != 1 ||
 			strcmp(outData.waveText, "WAVE") != 1 ||
-			strcmp(outData.fmtText,  "fmt ") != 1 ||
+			strcmp(outData.fmtText, "fmt ") != 1 ||
 			strcmp(outData.dataText, "data") != 1)
 		{
 			debugLog(std::string("Wave file \"") + fileLocation + "\" failed to load, invalid format\nMust be PCM/raw .wav file (RIFF WAVE PCM)", LOST_LOG_ERROR);
@@ -164,13 +164,14 @@ namespace lost
 
 	_SoundStream::_SoundStream(unsigned int bufferSize)
 		: m_BufferSize(bufferSize)
-		, a_UsingBBuffer(false)
 		, m_File(nullptr)
 		, m_Functional(false)
 		, m_SoundInfo{ 0, 0, 0, 0, 0, 0 }
+		, m_Active{ false }
+		, a_UsingBBuffer(false)
 		, a_Playing{ false }
-		, m_Active(false)
-		, a_LoopCount(0)
+		, a_Paused{ false }
+		, a_LoopCount{ 0 }
 		, a_Volume{ 1.0f }
 		, a_Panning{ 0.0f }
 	{

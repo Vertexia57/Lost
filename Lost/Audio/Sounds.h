@@ -71,8 +71,10 @@ namespace lost
 		unsigned int _getLoopCount() const;
 		inline float _getVolume() { return a_Volume.read(); };
 		inline float _getPanning() { return a_Panning.read(); };
+		inline bool  _getPaused() { return a_Paused.read(); };
 		inline void  _setVolume(float volume) { a_Volume.write(volume); };
 		inline void  _setPanning(float panning) { a_Panning.write(panning); };
+		inline void  _setPaused(float paused) { a_Paused.write(paused); };
 		const char* _getNextDataBlock();
 
 		inline bool isPlaying()					{ return a_Playing.read();  };
@@ -101,6 +103,7 @@ namespace lost
 
 		_HaltWrite<float> a_Volume;
 		_HaltWrite<float> a_Panning;
+		_HaltWrite<bool>  a_Paused;
 
 		std::mutex a_FillingBufferMutex;
 		std::thread a_FillingBufferThread;

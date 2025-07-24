@@ -1,17 +1,19 @@
 #include "Audio.h"
 #include "../Log.h"
 #include "../DeltaTime.h"
+#include "Effects.h"
 
 #include "ResourceManagers/AudioResourceManagers.h"
 
 #include <stdio.h>
 #include <vector>
 
-typedef short _ChannelQuality;
+#ifndef PI
+#define PI 3.141592653589
+#endif // !PI
 
 namespace lost
 {
-
 	class _Sound;
 	class _SoundStream;
 
@@ -19,6 +21,7 @@ namespace lost
 	{
 		_HaltWrite<std::vector<PlaybackSound*>> activeSounds;
 		_HaltWrite<std::vector<_SoundStream*>>  activeStreams;
+		_HaltWrite<std::vector<Effect*>>        activeEffects;
 	};
 
 	int playRaw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
@@ -29,22 +32,6 @@ namespace lost
 		
 		// Since the audio is on a different thread we need to make sure we don't run into any
 		// race conditions. We can use mutex to do this
-
-		// Solution of race conditions:
-		// Update function is ran:
-		//  > Main thread will pause when audio thread is using main_sounddata
-		//  > It will check the status of each sound
-		//  > Then it will remove ownership of main_sounddata
-		// When sound is added or removed:
-		//  > Main thread will pause when audio thread is using main_sounddata
-		//  > Then it will take ownership of the main_sounddata
-		//  > Then it will add / remove the sound
-		//  > Then remove ownership of main_sounddata
-		// When this function is ran:
-		// 
-		// All sounds are ran with audio_sounddata, this lets audio work while the main thread is adding sounds
-		// 
-		// Note: audio_sounddata is never accessed by the main thread, and so the audio thread owns it completely.
 		
 		// The sounds may be in different PCM formats, we will need to convert them into the same as this one
 		// It should be processed beforehand
@@ -54,27 +41,28 @@ namespace lost
 		// Eg. Sound format is 8-PCM and out is 16-PCM
 		// Sound in << 8 (Bitshift the input 8 bits to the left)
 
-		// The "middle man" format will need to be the maximum that RtAudio supports
-		// which is 32 bits/an integer
-
 		SamplerPassInInfo* inData = (SamplerPassInInfo*)data;
 		
 		// Will ALWAYS be 2!!!
-		const unsigned int channelCount = 2;
+		const unsigned int channelCount = LOST_AUDIO_CHANNELS;
 		const float volumeDecrement = 1.0f / 4.0f; // The second number is prefered to be a power of 2
 
 		_ChannelQuality* outData = (_ChannelQuality*)outputBuffer;
-		unsigned int outDataCapacity = sizeof(_ChannelQuality) * nBufferFrames * channelCount;
+		_ChannelQuality outDataSwapBuffer[LOST_AUDIO_BUFFER_COUNT];
+		unsigned int outDataCapacity = _EngineBytesPerSample * nBufferFrames * channelCount;
 
 		memset((char*)outputBuffer, 0, outDataCapacity);
 
-		// [----------------------]
-		//       Update Sounds
-		// [----------------------]
+		// [==========================]
+		//         Update Sounds
+		// [==========================]
 
 		std::vector<PlaybackSound*> sounds = inData->activeSounds.read();
 		for (unsigned int i = 0; i < sounds.size(); i++)
 		{
+			if (sounds.at(i)->_getPaused())
+				continue;
+
 			_PlaybackData& playbackData = sounds.at(i)->_getPlaybackData();
 
 			unsigned int inFormatSize = playbackData.bytesPerSample;
@@ -168,14 +156,18 @@ namespace lost
 			}
 		}
 
-		// [----------------------]
-		//   Update Sound Streams
-		// [----------------------]
+		// [==========================]
+		//     Update Sound Streams
+		// [==========================]
 
 		std::vector<_SoundStream*> streams = inData->activeStreams.read();
 		for (unsigned int i = 0; i < streams.size(); i++)
 		{
 			_SoundStream& stream = *streams.at(i);
+
+			if (stream._getPaused())
+				continue;
+
 			const _SoundInfo& streamInfo = stream._getSoundInfo();
 
 			unsigned int inFormatSize = streamInfo.bitsPerSample / 8;
@@ -214,7 +206,7 @@ namespace lost
 			const char* data = stream._getNextDataBlock();
 
 			// Get volume and panning info
-			float volume = stream._getVolume();
+			float volume = stream._getVolume() * volumeDecrement * getMasterVolume();
 			float panning = fmaxf(fminf(stream._getPanning(), 1.0f), -1.0f);
 
 			for (int sample = 0; sample < sampleWrite / channelCount; sample++)
@@ -254,6 +246,25 @@ namespace lost
 			if (sampleWrite == bytesLeft / inFormatSize)
 				stream._setIsPlaying(false);
 		}
+
+		// [==========================]
+		//     Update Audio Effects
+		// [==========================]
+
+		std::vector<Effect*> effects = inData->activeEffects.read();
+		bool bufferSwapped = false;
+		for (unsigned int i = 0; i < effects.size(); i++)
+		{
+			if (!bufferSwapped)
+				effects.at(i)->processChunk(outData, outDataSwapBuffer);
+			else
+				effects.at(i)->processChunk(outDataSwapBuffer, outData);
+			bufferSwapped = !bufferSwapped;
+		}
+
+		if (bufferSwapped)
+			memcpy(outData, outDataSwapBuffer, outDataCapacity);
+
 		return 0;
 	}
 
@@ -261,12 +272,12 @@ namespace lost
 	{
 	public:
 		AudioHandler()
-			: m_SamplerPassInInfo{ { {} }, { {} } }
+			: m_SamplerPassInInfo{ { {} }, { {} }, { {} } }
 		{
 
 		}
 
-		void init(RtAudioFormat format = RTAUDIO_SINT16)
+		void init(RtAudioFormat format = _RTAudioFormat)
 		{
 			std::vector<unsigned int> deviceIds = m_Dac.getDeviceIds();
 
@@ -280,10 +291,24 @@ namespace lost
 
 			m_Format = format;
 
-			m_Dac.openStream(&m_OutputParameters, NULL, format, 44100, &m_BufferFrames, &playRaw, (void*)&m_SamplerPassInInfo);
+			m_Dac.openStream(&m_OutputParameters, NULL, format, LOST_AUDIO_SAMPLE_RATE, &m_BufferFrames, &playRaw, (void*)&m_SamplerPassInInfo);
 			m_Dac.startStream();
 			
-			debugLog("Successfully initialized audio on device: " + m_CurrentDeviceName, LOST_LOG_SUCCESS);
+#ifdef LOST_DEBUG_MODE
+			std::string formatSize = "???";
+			switch (format)
+			{
+			case 1:
+			case 2:
+				formatSize = std::to_string(format << 3);
+				break;
+			case 8:
+				formatSize = "32";
+				break;
+			}
+
+			debugLog("Successfully initialized audio on device: " + m_CurrentDeviceName + ", at " + formatSize + " bits per sample", LOST_LOG_SUCCESS);
+#endif
 		}
 
 		void exit()
@@ -301,7 +326,7 @@ namespace lost
 		RtAudioFormat getAudioFormat() const { return m_Format; };
 		
 		// Loopcount - when UINT_MAX / -1 - will cause the sound to loop forever, only stopped by stopSound
-		PlaybackSound* playSound(_Sound* sound, float volume, float panning, unsigned int loopCount) // [!] TODO: Add Volume and Pan
+		PlaybackSound* playSound(_Sound* sound, float volume, float panning, unsigned int loopCount)
 		{
 			std::mutex& soundMutex = m_SamplerPassInInfo.activeSounds.getMutex();
 			PlaybackSound* pbSound = new PlaybackSound(sound, volume, panning, loopCount);
@@ -394,6 +419,20 @@ namespace lost
 				}
 			}
 		}
+
+		/*void destroyEffects(float deltaTime)
+		{
+			std::mutex& effectMutex = m_SamplerPassInInfo.activeEffects.getMutex();
+			for (int i = m_GarbageEffects.size() - 1; i >= 0; i--)
+			{
+				m_GarbageEffects.at(i).first += deltaTime;
+				if (m_GarbageEffects.at(i).first >= m_CullTime)
+				{
+					delete m_GarbageEffects.at(i).second;
+					m_GarbageEffects.erase(m_GarbageEffects.begin() + i);
+				}
+			}
+		}*/
 
 		bool hasSound(const PlaybackSound* sound)
 		{
@@ -493,6 +532,7 @@ namespace lost
 		{
 			endSounds(deltaTime);
 			endSoundStreams(deltaTime);
+			//destroyEffects(deltaTime);
 		}
 
 		void setMasterVolume(float volume)
@@ -505,6 +545,46 @@ namespace lost
 			return a_MasterVolume.read();
 		}
 
+		void addGlobalEffect(Effect* effect)
+		{
+			std::mutex& effectMutex = m_SamplerPassInInfo.activeEffects.getMutex();
+			effectMutex.lock();
+			m_SamplerPassInInfo.activeEffects.getWriteRef().push_back(effect);
+			m_SamplerPassInInfo.activeEffects.forceDirty();
+			effectMutex.unlock();
+		}
+
+		void removeGlobalEffect(Effect* effect)
+		{
+			std::mutex& effectMutex = m_SamplerPassInInfo.activeEffects.getMutex();
+
+			unsigned int location = -1;
+			Effect* ref = nullptr;
+			std::vector<Effect*>& writeRef = m_SamplerPassInInfo.activeEffects.getWriteRef();
+			for (int i = 0; i < writeRef.size(); i++)
+			{
+				if (writeRef.at(i) == effect)
+				{
+					location = i;
+					ref = writeRef.at(i);
+					break;
+				}
+			}
+
+			if (ref)
+			{
+				//m_GarbageEffects.push_back({ 0.0, ref });
+				effectMutex.lock();
+				writeRef.erase(writeRef.begin() + location);
+				m_SamplerPassInInfo.activeEffects.forceDirty();
+				effectMutex.unlock();
+			}
+			else
+			{
+				debugLog("Tried to remove an effect that had already been removed or wasn't added in the first place", LOST_LOG_WARNING_NO_NOTE);
+			}
+		}
+
 	private:
 		RtAudio m_Dac;
 		RtAudio::StreamParameters m_OutputParameters;
@@ -514,20 +594,22 @@ namespace lost
 
 		// Audio stream settings
 		RtAudioFormat m_Format;
-		unsigned int m_BufferFrames = 1024;
+		unsigned int m_BufferFrames = LOST_AUDIO_BUFFER_FRAMES;
 
 		_HaltWrite<float> a_MasterVolume = 1.0f;
 
 		// lifetime + playbackSound*
 		std::vector<std::pair<double, PlaybackSound*>> m_GarbageSounds;
 		std::vector<std::pair<double, _SoundStream*>> m_GarbageStreams;
-		double m_CullTime = 100.0;
+		//std::vector<std::pair<double, Effect*>> m_GarbageEffects;
+		double m_CullTime = 10.0; // Must be larger than 1000.0f / LOST_AUDIO_SAMPLE_RATE
 	};
 
 	AudioHandler _audioHandler;
 
 	PlaybackSound::PlaybackSound(_Sound* soundPlaying, float volume, float panning, unsigned int loopCount)
 		: a_Playing{ true }
+		, a_Paused{ false }
 		, a_Volume{ volume }
 		, a_Panning{ fmaxf(fminf(panning, 1.0f), -1.0f) }
 	{
@@ -550,6 +632,36 @@ namespace lost
 		m_ParentSound = soundPlaying;
 	}
 
+	float audioSampleToFloat(AudioSample sample)
+	{
+#if defined(LOST_AUDIO_QUALITY_HIGH)
+		return static_cast<float>(sample) / 2147483648.0f; // 2^31
+#elif defined(LOST_AUDIO_QUALITY_LOW)
+		return static_cast<float>(sample) / 128.0f; // 2^7
+#else // LOST_AUDIO_QUALITY_MEDIUM
+		return static_cast<float>(sample) / 32768.0f; // 2^15
+#endif
+	}
+
+	AudioSample floatToAudioSample(float sample)
+	{
+#if defined(LOST_AUDIO_QUALITY_HIGH)
+		return static_cast<int32_t>(sample * 2147483648.0f); // 2^31
+#elif defined(LOST_AUDIO_QUALITY_LOW)
+		return static_cast<int8_t>(sample * 128.0f); // 2^7
+#else // LOST_AUDIO_QUALITY_MEDIUM
+		return static_cast<int16_t>(sample * 32768.0f); // 2^15
+#endif
+	}
+
+	static float PCM32ToFloat(int32_t val) { return static_cast<float>(val) / 2147483648.0f; } // 2^31 
+	static float PCM16ToFloat(int16_t val) { return static_cast<float>(val) / 32768.0f; } // 2^15
+	static float PCM8ToFloat(int8_t val)   { return static_cast<float>(val) / 128.0f; } // 2^7
+
+	static int32_t floatToPCM32(float val) { return static_cast<int32_t>(val * 2147483648.0f); } // 2^31
+	static int16_t floatToPCM16(float val) { return static_cast<int16_t>(val * 32768.0f); } // 2^15
+	static int8_t  floatToPCM8(float val)  { return static_cast<int8_t>(val * 128.0f); } // 2^7
+
 	void _initAudio()
 	{
 		_audioHandler.init();
@@ -564,7 +676,7 @@ namespace lost
 
 	void _updateAudio()
 	{
-		_audioHandler.update(getDeltaTime());
+		_audioHandler.update(lost::getDeltaTime());
 	}
 
 	unsigned int _getAudioHandlerFormat()
@@ -604,6 +716,11 @@ namespace lost
 		return _audioHandler.stopSounds(sound);
 	}
 
+	void setSoundPaused(PlaybackSound* sound, bool paused)
+	{
+		sound->_setPaused(paused);
+	}
+
 	void setSoundVolume(PlaybackSound* sound, float volume)
 	{
 		sound->_setVolume(volume);
@@ -635,12 +752,28 @@ namespace lost
 		_audioHandler.stopSoundStream(soundStream);
 	}
 
+	void setSoundStreamPaused(SoundStream soundStream, bool paused)
+	{
+		soundStream->_setPaused(paused);
+	}
+
 	bool isSoundStreamPlaying(SoundStream sound)
 	{
 		if (!_audioHandler.hasSoundStream(sound))
 			return false;
 		return sound->isPlaying();
 	}
+
+	void addGlobalEffect(Effect* effect)
+	{
+		_audioHandler.addGlobalEffect(effect);
+	}
+
+	void removeGlobalEffect(Effect* effect)
+	{
+		_audioHandler.removeGlobalEffect(effect);
+	}
+
 	void setSoundStreamVolume(SoundStream sound, float volume)
 	{
 		sound->_setVolume(volume);
